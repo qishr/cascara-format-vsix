@@ -1,2 +1,2 @@
-# cascara-format-vsix
-VSIX Package format support for Cascara
+# Cascara VSIX Package Support
+
