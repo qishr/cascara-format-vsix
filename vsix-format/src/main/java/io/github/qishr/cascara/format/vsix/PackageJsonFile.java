@@ -39,58 +39,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.qishr.cascara.common.property.Property;
 import io.github.qishr.cascara.schema.annotation.SchemaDefinition;
 import io.github.qishr.cascara.schema.annotation.SchemaProperty;
-import io.github.qishr.cascara.schema.util.SchematicObject;
 
 @SchemaDefinition
-public class PackageJsonFile { //extends SchematicObject {
-
-    // @SchemaDefinition
-    // public static class Contribution {
-    //     @SchemaProperty
-    //     List<VsixThemeInfo> themes;
-    // }
-
-    // @SchemaDefinition
-    // public static class Theme extends Contribution {
-    //     // @SchemaProperty
-    //     // String name;
-
-    //     // @SchemaProperty
-    //     // String uiTheme;
-
-    //     // @SchemaProperty
-    //     // String path;
-    // }
-
-    // @SchemaDefinition
-    // public static class ConfigurationDefaults extends Contribution {}
-
+public class PackageJsonFile {
     @SchemaProperty
     String name;
-    // Property<String> name;
 
     @SchemaProperty
     String displayName;
-    // Property<String> displayName;
 
     @SchemaProperty
     String description;
-    // Property<String> description;
 
     @SchemaProperty
     String version;
-    // Property<String> version;
 
     @SchemaProperty
     String icon;
-    // Property<String> icon;
 
     @SchemaProperty
     String publisher;
-    // Property<String> publisher;
 
     @SchemaProperty
     Map<String,String> engines = new HashMap<>();
@@ -98,50 +68,13 @@ public class PackageJsonFile { //extends SchematicObject {
     @SchemaProperty
     List<String> categories = new ArrayList<>();
 
-    // TODO: Limit object type to UiTheme, ConfigurationDefaults
     @SchemaProperty
     Map<String,List<Contribution>> contributes = new HashMap<>();
-
-    // private List<Map<String,String>> themes = new ArrayList<>();
 
     @SchemaProperty
     RepositoryInfo repository;
 
     public PackageJsonFile() {
-
-
-        // StringBuilder sb = new StringBuilder();
-
-
-
-
-
-
-        // sb.append("  \"repository\": {\n");
-        // sb.append("    \"type\": \"git\",\n");
-        // sb.append("    \"url\": \"git+https://github.com/sandydunlop/vscode-cascara-retro-theme.git\"\n");
-        // sb.append("  }\n");
-
-
-        // sb.append("}\n");
-
-        // // TODO: Set the defaults:
-        // sb.append("  \"version\": \"1.0.2\",\n");
-        // sb.append("  \"$schema\": \"vscode://schemas/vscode-extensions\",\n");
-
-        // sb.append("  \"engines\": {\n");
-        // sb.append("    \"vscode\": \"^1.103.0\"\n");
-        // sb.append("  },\n");
-        // sb.append("  \"categories\": [\n");
-        // sb.append("    \"Themes\"\n");
-        // sb.append("  ],\n");
-
-        // // TODO: Configurables:
-        // sb.append("  \"name\": \"cascara-retro-theme\",\n");
-        // sb.append("  \"displayName\": \"Cascara Retro Theme\",\n");
-        // sb.append("  \"description\": \"Cascara Retro Theme\",\n");
-        // sb.append("  \"publisher\": \"Cascara\",\n");
-        // sb.append("  \"icon\": \"images/icon.png\",\n");
     }
 
     public String getName() {
@@ -232,9 +165,6 @@ public class PackageJsonFile { //extends SchematicObject {
         return contributes;
     }
 
-    // public PackageJsonFile addContribution(String type, Contribution c) {
-    // }
-
     public PackageJsonFile addTheme(VsixThemeInfo c) {
         final String groupName = "themes";
         List<Contribution> group = contributes.get(groupName);
@@ -242,9 +172,7 @@ public class PackageJsonFile { //extends SchematicObject {
             group = new ArrayList<>();
             contributes.put(groupName, group);
         }
-
         group.add(c);
-
         return this;
     }
 
@@ -259,5 +187,4 @@ public class PackageJsonFile { //extends SchematicObject {
         repository = o;
         return this;
     }
-
 }

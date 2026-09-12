@@ -11,5 +11,6 @@
             "${workspaceFolder}/build/modulepath/*.jar"
         ]
     },
-    "workbench.colorTheme": "Cascara Retro Green on Dull Beige"
+    "workbench.colorTheme": "Cascara Retro Green on Dull Beige",
+    "java.compile.nullAnalysis.mode": "automatic"
 }

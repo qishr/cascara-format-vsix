@@ -1,7 +1,6 @@
 package io.github.qishr.cascara.gradle.vsix;
 
 import io.github.qishr.cascara.format.vsix.VsixPackage;
-import io.github.qishr.cascara.format.vsix.VsixMetadata;
 import io.github.qishr.cascara.format.vsix.RepositoryInfo;
 
 import org.gradle.api.DefaultTask;
