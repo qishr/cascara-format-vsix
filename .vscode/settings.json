@@ -2,7 +2,7 @@
     "java.configuration.updateBuildConfiguration": "disabled",
     "java.test.config": {
         "modulePaths": ["${workspaceFolder}/build/modulepath"],
-        "module": "cascara.common.io",
+        "module": "cascara.format.vsix",
         "vmArgs": [
             "--module-path",
             "${workspaceFolder}/build/modulepath",
@@ -11,7 +11,5 @@
             "${workspaceFolder}/build/modulepath/*.jar"
         ]
     },
-
-    "workbench.colorTheme": "Cascara Retro Green on Heavy Metal"
-
+    "workbench.colorTheme": "Cascara Retro Green on Dull Beige"
 }
