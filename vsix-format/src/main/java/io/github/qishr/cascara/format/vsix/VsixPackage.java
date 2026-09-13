@@ -48,7 +48,6 @@ import java.util.Set;
 import io.github.qishr.cascara.common.annotation.Nullable;
 import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
 import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
-import io.github.qishr.cascara.common.diagnostic.LocatableException;
 import io.github.qishr.cascara.common.diagnostic.NoOpReporter;
 import io.github.qishr.cascara.common.diagnostic.Reporter;
 import io.github.qishr.cascara.common.diagnostic.UnimplementedMethodException;
@@ -404,7 +403,6 @@ public class VsixPackage extends ArchiveFile {
         try {
             rootNode = jsonAstParser.parse(jsonString);
         } catch (ParserException e) {
-            System.out.println(jsonString);
             e.setUri(URI.create(entryName));
             throw e;
             // throw new LocalizableIOException(e, GenericDiagnosticCode.ERROR, e.getMessage());
@@ -502,8 +500,6 @@ public class VsixPackage extends ArchiveFile {
 
     private void parsePackageManifest(String jsonString) throws LocalizableIOException {
         if (jsonString == null || jsonString.isBlank()) return;
-
-        System.out.println(jsonString);
 
         JsonSerializer serializer = new JsonSerializer();
         pkgJsonFile = serializer.fromString(jsonString, PackageJsonFile.class);

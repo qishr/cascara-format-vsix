@@ -44,16 +44,6 @@ public class VsixPlugin implements Plugin<Project> {
             );
         });
 
-        //
-        // Original code is above here. Ieally it doesn't change.
-        //
-
-        // boolean isWindows = DefaultNativePlatform.currentOperatingSystem().isWindows();
-        // String codeExecutable = isWindows ? "code.cmd" : "code";
-
-        // boolean isWindows = org.gradle.nativeplatform.platform.internal.OperatingSystem.current().isWindows();
-        // String codeExecutable = isWindows ? "code.cmd" : "code";
-
         // Use Gradle's public NativePlatform API
         OperatingSystem os = DefaultNativePlatform.getCurrentOperatingSystem();
         String codeExecutable = os.isWindows() ? "code.cmd" : "code";

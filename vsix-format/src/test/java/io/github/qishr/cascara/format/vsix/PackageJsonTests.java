@@ -38,10 +38,6 @@ public class PackageJsonTests extends ArchiveTestBase {
 
         assertNotNull(json);
 
-        // System.out.println(json);
-
-
-
         jsonFile.setName("themeName");
         jsonFile.setDisplayName("displayName");
         jsonFile.setDescription("description");
@@ -66,8 +62,6 @@ public class PackageJsonTests extends ArchiveTestBase {
 
         JsonSerializer serializer = new JsonSerializer();
         json = serializer.toString(jsonFile);
-
-        System.out.println(json);
     }
 
     @Test
