@@ -23,6 +23,10 @@ public class VsixPlugin implements Plugin<Project> {
             task.getChangeLog().set(extension.getChangeLog());
             task.getImagesDir().set(extension.getImagesDir());
 
+            // Languages and Syntaxes/Grammars
+            task.getGrammarFiles().from(extension.getGrammars());
+            task.getLanguages().addAll(extension.getLanguages());
+
             // Collect explicitly added theme files or theme build directory
             task.getThemeFiles().from(extension.getThemes());
 

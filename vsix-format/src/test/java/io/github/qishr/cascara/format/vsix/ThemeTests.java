@@ -31,7 +31,7 @@ public class ThemeTests extends ArchiveTestBase {
 
         assertFalse(pkg.getThemes().isEmpty());
 
-        VsixThemeInfo theme = pkg.getThemes().getFirst();
+        ThemeContribution theme = pkg.getThemes().getFirst();
 
         assertEquals("Test Theme", theme.getName());
         assertEquals("dark", theme.getType());
@@ -63,7 +63,7 @@ public class ThemeTests extends ArchiveTestBase {
 
         assertFalse(pkg.getThemes().isEmpty());
 
-        VsixThemeInfo theme = pkg.getThemes().getFirst();
+        ThemeContribution theme = pkg.getThemes().getFirst();
 
         pkg.close();
 

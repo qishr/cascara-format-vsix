@@ -47,7 +47,7 @@ public class PackageJsonTests extends ArchiveTestBase {
         jsonFile.addEngine("vscode", "^1.103.0");
         jsonFile.addCategory("Themes");
 
-        VsixThemeInfo theme = new VsixThemeInfo();
+        ThemeContribution theme = new ThemeContribution();
         theme.setLabel("themeLabel");
         theme.setUiTheme("themeUiTheme");
         theme.setPath("themePath");

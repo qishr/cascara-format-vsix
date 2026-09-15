@@ -1,9 +1,12 @@
 package io.github.qishr.cascara.gradle.vsix;
 
+import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
 import io.github.qishr.cascara.format.vsix.VsixPackage;
+import io.github.qishr.cascara.format.vsix.LanguageContribution;
 import io.github.qishr.cascara.format.vsix.RepositoryInfo;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
@@ -37,14 +40,20 @@ public abstract class PackageVsixTask extends DefaultTask {
     @Input @Optional public abstract MapProperty<String, String> getRepository();
 
     // File inputs
+    @InputDirectory @Optional public abstract DirectoryProperty getImagesDir();
     @InputFile @Optional public abstract RegularFileProperty getReadme();
     @InputFile @Optional public abstract RegularFileProperty getLicense();
     @InputFile @Optional public abstract RegularFileProperty getChangeLog();
-    @InputDirectory @Optional public abstract DirectoryProperty getImagesDir();
+    @InputFile @Optional public abstract RegularFileProperty getLanguageConfiguration();
+
+    @InputFiles public abstract ConfigurableFileCollection getGrammarFiles();
+    @Nested public abstract NamedDomainObjectContainer<LanguageExtension> getLanguages();
+
     @InputFiles public abstract ConfigurableFileCollection getThemeFiles();
 
     @OutputFile public abstract RegularFileProperty getOutputFile();
 
+    @SuppressWarnings("resource")
     @TaskAction
     public void buildPackage() throws Exception {
         File destination = getOutputFile().get().getAsFile();
@@ -70,11 +79,27 @@ public abstract class PackageVsixTask extends DefaultTask {
                     .setType(getRepository().get().get("type"))
                     .setUrl(getRepository().get().get("url"))
                 );
+                // .setLanguageConfiguration(getLanguageConfiguration().get().getAsFile().toPath());
 
             if (getReadme().isPresent()) vsix.setReadme(getReadme().get().getAsFile().toPath());
             if (getLicense().isPresent()) vsix.setLicense(getLicense().get().getAsFile().toPath());
             if (getChangeLog().isPresent()) vsix.setChangeLog(getChangeLog().get().getAsFile().toPath());
             if (getImagesDir().isPresent()) vsix.addImagesFromDirectory(getImagesDir().get().getAsFile().toPath());
+
+            for (LanguageExtension language : getLanguages()) {
+                LanguageContribution contribution = new LanguageContribution()
+                    .setId(language.getId().get())
+                    .setAliases(language.getAliases().get())
+                    .setExtensions(language.getFileExtensions().get())
+                    .setConfiguration(language.getConfiguration().get());
+                vsix.addContribution(contribution);
+            }
+
+            for (File syntaxFile : getGrammarFiles().getAsFileTree().getFiles()) {
+                if (syntaxFile.isFile() && syntaxFile.getName().endsWith(".json")) {
+                    vsix.addSyntaxFile(syntaxFile.toPath());
+                }
+            }
 
             for (File themeFile : getThemeFiles().getAsFileTree().getFiles()) {
                 if (themeFile.isFile() && themeFile.getName().endsWith(".json")) {

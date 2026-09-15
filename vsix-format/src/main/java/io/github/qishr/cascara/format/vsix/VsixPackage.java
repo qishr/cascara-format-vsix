@@ -46,10 +46,12 @@ import java.util.Map;
 import java.util.Set;
 
 import io.github.qishr.cascara.common.annotation.Nullable;
+import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
 import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
 import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
 import io.github.qishr.cascara.common.diagnostic.NoOpReporter;
 import io.github.qishr.cascara.common.diagnostic.Reporter;
+import io.github.qishr.cascara.common.diagnostic.StandardReporter;
 import io.github.qishr.cascara.common.diagnostic.UnimplementedMethodException;
 import io.github.qishr.cascara.common.diagnostic.code.GenericDiagnosticCode;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
@@ -67,6 +69,7 @@ import io.github.qishr.cascara.schema.diagnostic.SchemaException;
 public class VsixPackage extends ArchiveFile {
     private static final String DIR_EXTENSION = "extension/";
     private static final String DIR_IMAGES = DIR_EXTENSION + "images/";
+    private static final String DIR_SYNTAXES = DIR_EXTENSION + "syntaxes/";
     private static final String DIR_THEMES = DIR_EXTENSION + "themes/";
 
     private static final String ENTRY_CHANGELOG = DIR_EXTENSION + "CHANGELOG.md";
@@ -75,9 +78,13 @@ public class VsixPackage extends ArchiveFile {
     private static final String ENTRY_MANIFEST_XML = DIR_EXTENSION + "extension.vsixmanifest";
     private static final String ENTRY_PACKAGE_JSON = DIR_EXTENSION + "package.json";
     private static final String ENTRY_README = DIR_EXTENSION + "README.md";
+    private static final String ENTRY_LANGUAGE_CONFIGURATION = DIR_EXTENSION + "language-configuration.json";
 
+    private static final String CATEGORIES_LANGUAGES = "Programming Languages";
     private static final String CATEGORIES_THEMES = "Themes";
 
+    private static final String CONTRIBUTES_GRAMMARS = "grammars";
+    private static final String CONTRIBUTES_LANGUAGES = "languages";
     private static final String CONTRIBUTES_THEMES = "themes";
 
     private boolean closed = false;
@@ -87,26 +94,6 @@ public class VsixPackage extends ArchiveFile {
 
     Reporter reporter = new NoOpReporter();
     // Reporter reporter = new StandardReporter().setLevel(Level.DEBUG);
-
-    @FunctionalInterface
-    private interface SpecialFileHandler {
-        void handle(Path sourcePath) throws LocalizableIOException;
-    }
-
-    @FunctionalInterface
-    private interface SpecialContentHandler {
-        void handle(String content) throws LocalizableIOException;
-    }
-
-    @FunctionalInterface
-    private interface SpecialDirectoryFileHandler {
-        void handle(Path sourcePath, String entryName) throws LocalizableIOException;
-    }
-
-    @FunctionalInterface
-    private interface SpecialDirectoryContentHandler {
-        void handle(String content, String entryName) throws LocalizableIOException;
-    }
 
     private final Map<String, SpecialFileHandler> fileHandlers = Map.of(
         ENTRY_PACKAGE_JSON, this::addPackageJsonFile,
@@ -119,11 +106,11 @@ public class VsixPackage extends ArchiveFile {
     );
 
     private final Map<String, SpecialDirectoryContentHandler> specialDirectoryContentHandlers = Map.of(
-        DIR_THEMES, this::addThemeContent
+        DIR_THEMES, this::addThemeContentInternal
     );
 
     private final Map<String, SpecialDirectoryFileHandler> specialDirectoryFileHandlers = Map.of(
-        DIR_THEMES, this::addThemeFile
+        DIR_THEMES, this::addThemeFileInternal
     );
 
     private VsixPackage(Path vsixPath, boolean create) throws LocalizableIOException {
@@ -324,15 +311,58 @@ public class VsixPackage extends ArchiveFile {
     }
 
     //
-    // Themes and Images
+    // Images
     //
 
-    public List<VsixThemeInfo> getThemes() {
+    public void addImagesFromDirectory(Path path) throws LocalizableIOException {
+        addDirectory(path, DIR_IMAGES);
+    }
+
+    //
+    // Contributions
+    //
+
+    public void addContribution(Contribution contribution) {
+        if (contribution instanceof LanguageContribution language) {
+            addLanguageContribution(language);
+        }
+        else if (contribution instanceof ThemeContribution theme) {
+            addThemeContribution(theme);
+        }
+        else {
+            throw new VsixException(GenericDiagnosticCode.ERROR, "Unknown contribution type: " + contribution.getClass().getName());
+        }
+    }
+
+    //
+    // Languages
+    //
+
+    public void setLanguageConfiguration(Path path) throws LocalizableIOException {
+        addFile(path, ENTRY_LANGUAGE_CONFIGURATION);
+    }
+
+    public void addSyntaxFile(Path path) throws LocalizableIOException {
+        String fileName = path.getFileName().toString();
+        String entryName = DIR_SYNTAXES + fileName;
+
+        reporter.debug("[asf] path: " + path);
+        reporter.debug("[asf] fileName: " + fileName);
+        reporter.debug("[asf] entryName: " + entryName);
+
+        addSyntaxFileInternal(path, entryName);
+    }
+
+    //
+    // Themes
+    //
+
+    public List<ThemeContribution> getThemes() {
         List<Contribution> themesGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
         if (themesGroup == null) {
             return List.of();
         }
-        return toImmutableList(themesGroup, VsixThemeInfo.class);
+        return toImmutableList(themesGroup, ThemeContribution.class);
     }
 
     public void addThemesFromDirectory(Path sourcePath) throws LocalizableIOException {
@@ -343,12 +373,8 @@ public class VsixPackage extends ArchiveFile {
         }
     }
 
-    public void addImagesFromDirectory(Path path) throws LocalizableIOException {
-        addDirectory(path, DIR_IMAGES);
-    }
-
     public void addThemeFile(Path path) throws LocalizableIOException {
-        addThemeFile(path, DIR_THEMES + path.getFileName());
+        addThemeFileInternal(path, DIR_THEMES + path.getFileName());
     }
 
     //
@@ -377,10 +403,134 @@ public class VsixPackage extends ArchiveFile {
 	}
 
     //
+    //
+    //
+
+    private void addContributionInternal(String categoryName, String contributionGroupName, Contribution contribution) {
+        if (!pkgJsonFile.getCategories().contains(categoryName)) {
+            // TODO: Use a set instead of a list for this
+            pkgJsonFile.getCategories().add(categoryName);
+        }
+
+        List<Contribution> contributionGroup = pkgJsonFile.getContributions().get(contributionGroupName);
+        if (contributionGroup == null) {
+            contributionGroup = new ArrayList<>();
+            contributionGroup.add(contribution);
+            pkgJsonFile.getContributions().put(contributionGroupName, contributionGroup);
+        }
+    }
+
+    //
+    // Languages
+    //
+
+    private void addLanguageContribution(Contribution contribution) {
+        addContributionInternal(CATEGORIES_LANGUAGES, CONTRIBUTES_LANGUAGES, contribution);
+    }
+
+    private void addSyntaxFileInternal(Path path, String entryName) throws LocalizableIOException {
+        super.addFile(path, DIR_SYNTAXES + path.getFileName());
+        // extract metadata from theme JSON into Package JSON
+        String jsonString;
+		try {
+			jsonString = Files.readString(path);
+		} catch (IOException e) {
+            throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
+		}
+        extractGrammarMetadata(jsonString, entryName);
+    }
+
+    private void extractGrammarMetadata(String jsonString, String entryName) {
+        JsonObject root = parseJson(jsonString, entryName);
+
+        if (!pkgJsonFile.getCategories().contains(CATEGORIES_LANGUAGES)) {
+            // TODO: Use a set instead of a list for this
+            pkgJsonFile.getCategories().add(CONTRIBUTES_LANGUAGES);
+        }
+
+        List<Contribution> grammarsGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_GRAMMARS);
+        if (grammarsGroup == null) {
+            grammarsGroup = new ArrayList<>();
+            pkgJsonFile.getContributions().put(CONTRIBUTES_GRAMMARS, grammarsGroup);
+        }
+
+        // Is theme in languagesGroup?
+        GrammarContribution contribution = null;
+        for (Contribution c : grammarsGroup) {
+            GrammarContribution candidate = (GrammarContribution)c; // TODO: Type safety
+
+            String candidateContribution = candidate.getPath();
+            if (candidateContribution == null) {
+                continue;
+            }
+            reporter.debug("[egm] candidateContribution: " + candidateContribution);
+
+            String candidateEntryName = relativeToAbsoluteEntry(DIR_EXTENSION, candidateContribution);
+            reporter.debug("[egm] Candidate: " + candidateEntryName);
+            if (candidateEntryName.equals(entryName)) {
+                reporter.debug("[egm] Match: " + candidateEntryName);
+                contribution = candidate;
+                break;
+            }
+        }
+
+        String name = getLanguageId(entryName);
+        String scopeName = root.getString("scopeName");
+        String configuration = root.getString("configuration");
+
+        reporter.debug("[egm] name: " + name);
+        reporter.debug("[egm] scopeName: " + scopeName);
+        reporter.debug("[egm] entryName: " + entryName);
+        reporter.debug("[egm] configuration: " + configuration);
+
+        // TODO: Make this more user friendly.
+        // Perhaps one of:
+        //   .toList(PrimitiveType)
+        //   .toList(String.class)
+        //   .toList(new TypeReference<String>() {})
+        // JsonSerializer srl = new JsonSerializer();
+        // List<String> aliases = srl.fromAst(root.getArray("aliases"), new TypeReference<List<String>>() {});
+        // List<String> extensions = srl.fromAst(root.getArray("extensions"), new TypeReference<List<String>>() {});
+
+
+        String relEntryName = "./" + entryName.substring(DIR_EXTENSION.length());
+
+        if (contribution == null) {
+            // Create it
+            contribution = new GrammarContribution();
+            contribution.setPath(relEntryName);
+            grammarsGroup.add(contribution);
+            reporter.debug("[egm] Added contribution");
+        }
+
+        contribution.setLanguage(name);
+        contribution.setScopeName(scopeName);
+        contribution.setPath(relEntryName);
+    }
+
+    private String getLanguageId(String grammarEntryName) {
+        int lastSlash = grammarEntryName.lastIndexOf("/");
+        if (lastSlash == -1 ) {
+            throw new VsixException(GenericDiagnosticCode.ERROR, "Invalid grammar filename: " + grammarEntryName);
+        }
+        int dot = grammarEntryName.indexOf(".", lastSlash);
+        if (dot == -1 ) {
+            throw new VsixException(GenericDiagnosticCode.ERROR, "Invalid grammar filename: " + grammarEntryName);
+        }
+        String name = grammarEntryName.substring(lastSlash + 1, dot);
+        return name;
+    }
+
+    //
     // Themes
     //
 
-    private void addThemeFile(Path path, String entryName) throws LocalizableIOException {
+    private void addThemeContribution(Contribution contribution) {
+        addContributionInternal(CATEGORIES_THEMES, CONTRIBUTES_THEMES, contribution);
+        // TODO
+    }
+
+    private void addThemeFileInternal(Path path, String entryName) throws LocalizableIOException {
         super.addFile(path, DIR_THEMES + path.getFileName());
         // extract metadata from theme JSON into Package JSON
         String jsonString;
@@ -392,85 +542,65 @@ public class VsixPackage extends ArchiveFile {
         extractUiThemeMetadata(jsonString, entryName);
     }
 
-    private void addThemeContent(String content, String entryName) throws LocalizableIOException {
+    private void addThemeContentInternal(String content, String entryName) throws LocalizableIOException {
         super.addFile(content, entryName);
         extractUiThemeMetadata(content, entryName);
     }
 
     private void extractUiThemeMetadata(String jsonString, String entryName) {
-        JsonAstParser jsonAstParser = new JsonAstParser().setOptions(JsonOptions.JSON5);
-        JsonNode rootNode;
-        try {
-            rootNode = jsonAstParser.parse(jsonString);
-        } catch (ParserException e) {
-            e.setUri(URI.create(entryName));
-            throw e;
-            // throw new LocalizableIOException(e, GenericDiagnosticCode.ERROR, e.getMessage());
+        JsonObject root = parseJson(jsonString, entryName);
+
+        if (!pkgJsonFile.getCategories().contains(CATEGORIES_THEMES)) {
+            // TODO: Use a set instead of a list for this
+            pkgJsonFile.getCategories().add(CONTRIBUTES_THEMES);
         }
-        if (rootNode instanceof JsonObject rootObject) {
-            if (!pkgJsonFile.getCategories().contains(CATEGORIES_THEMES)) {
-                // TODO: Use a set instead of a list for this
-                pkgJsonFile.getCategories().add(CONTRIBUTES_THEMES);
+
+        List<Contribution> themesGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
+        if (themesGroup == null) {
+            themesGroup = new ArrayList<>();
+            pkgJsonFile.getContributions().put(CONTRIBUTES_THEMES, themesGroup);
+        }
+
+        // Is theme in themesGroup?
+        ThemeContribution theme = null;
+        for (Contribution c : themesGroup) {
+            ThemeContribution candidate = (ThemeContribution)c; // TODO: Type safety
+            String candidateEntryName = relativeToAbsoluteEntry(DIR_EXTENSION, candidate.getPath());
+            reporter.debug("Candidate: " + candidateEntryName);
+            if (candidateEntryName.equals(entryName)) {
+                reporter.debug("Match: " + candidateEntryName);
+                theme = candidate;
+                break;
             }
+        }
 
-            List<Contribution> themesGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
-            if (themesGroup == null) {
-                themesGroup = new ArrayList<>();
-                pkgJsonFile.getContributions().put(CONTRIBUTES_THEMES, themesGroup);
-            }
+        String name = root.getString("name");
+        String type = root.getString("type");
+        boolean semanticHighlighting = root.getBoolean("semanticHighlighting");
 
-            // Is theme in themesGroup?
-            VsixThemeInfo theme = null;
-            for (Contribution c : themesGroup) {
-                VsixThemeInfo candidate = (VsixThemeInfo)c;
-                String candidateEntryName = relativeToAbsoluteEntry(DIR_EXTENSION, candidate.getPath());
-                reporter.debug("Candidate: " + candidateEntryName);
-                if (candidateEntryName.equals(entryName)) {
-                    reporter.debug("Match: " + candidateEntryName);
-                    theme = candidate;
-                    break;
-                }
-            }
+        if (theme == null) {
+            // Create it
+            String relEntryName = "./" + entryName.substring(DIR_EXTENSION.length());
+            theme = new ThemeContribution();
+            theme.setPath(relEntryName);
+            themesGroup.add(theme);
+        }
 
-            String name = rootObject.getString("name");
-            String type = rootObject.getString("type");
-            boolean semanticHighlighting = rootObject.getBoolean("semanticHighlighting");
+        theme.setName(name);
+        theme.setType(type);
+        theme.setSemanticHighlighting(semanticHighlighting);
 
-            if (theme == null) {
-                // Create it
-                String relEntryName = "./" + entryName.substring(DIR_EXTENSION.length());
-                theme = new VsixThemeInfo();
-                theme.setPath(relEntryName);
-                themesGroup.add(theme);
-            }
-
-            theme.setName(name);
-            theme.setType(type);
-            theme.setSemanticHighlighting(semanticHighlighting);
-
-            if (type.equals("light")) {
-                theme.setUiTheme("vs-light");
-            } else {
-                theme.setUiTheme("vs-dark");
-            }
-            theme.setLabel(name);
-
+        if (type.equals("light")) {
+            theme.setUiTheme("vs-light");
         } else {
-            throw new SchemaException(SchemaDiagnosticCode.ROOT_MUST_BE_MAP);
+            theme.setUiTheme("vs-dark");
         }
-    }
-
-    private String relativeToAbsoluteEntry(String baseDir, String entryName) {
-        if (entryName.startsWith("./")) {
-            String rel = entryName.substring(2);
-            return baseDir + rel;
-        }
-        return entryName;
+        theme.setLabel(name);
     }
 
     private void addThemeNoThrow(Path sourcePath, Path entryPath, List<LocalizableIOException> exceptions) {
         try {
-            addThemeFile(sourcePath, null);
+            addThemeFileInternal(sourcePath, null);
         } catch (LocalizableIOException e) {
             exceptions.add(e);
         }
@@ -620,6 +750,30 @@ public class VsixPackage extends ArchiveFile {
     // Helpers
     //
 
+    private String relativeToAbsoluteEntry(String baseDir, String entryName) {
+        if (entryName.startsWith("./")) {
+            String rel = entryName.substring(2);
+            return baseDir + rel;
+        }
+        return entryName;
+    }
+
+    private JsonObject parseJson(String jsonString, String entryName) {
+        JsonAstParser jsonAstParser = new JsonAstParser().setOptions(JsonOptions.JSON5);
+        JsonNode rootNode;
+        try {
+            rootNode = jsonAstParser.parse(jsonString);
+        } catch (ParserException e) {
+            e.setUri(URI.create(entryName));
+            throw e;
+            // throw new LocalizableIOException(e, GenericDiagnosticCode.ERROR, e.getMessage());
+        }
+        if (rootNode instanceof JsonObject rootObject) {
+            return rootObject;
+        }
+        throw new SchemaException(SchemaDiagnosticCode.ROOT_MUST_BE_MAP);
+    }
+
     private void enumerateOptionalFiles() throws LocalizableIOException {
         optionalFiles.clear();
         try {
@@ -659,5 +813,29 @@ public class VsixPackage extends ArchiveFile {
         }
 
         return List.copyOf(result);
+    }
+
+    //
+    //
+    //
+
+    @FunctionalInterface
+    private interface SpecialFileHandler {
+        void handle(Path sourcePath) throws LocalizableIOException;
+    }
+
+    @FunctionalInterface
+    private interface SpecialContentHandler {
+        void handle(String content) throws LocalizableIOException;
+    }
+
+    @FunctionalInterface
+    private interface SpecialDirectoryFileHandler {
+        void handle(Path sourcePath, String entryName) throws LocalizableIOException;
+    }
+
+    @FunctionalInterface
+    private interface SpecialDirectoryContentHandler {
+        void handle(String content, String entryName) throws LocalizableIOException;
     }
 }

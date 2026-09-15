@@ -37,7 +37,7 @@ package io.github.qishr.cascara.format.vsix;
 import io.github.qishr.cascara.common.annotation.DataIgnore;
 import io.github.qishr.cascara.common.property.Properties;
 
-public class VsixThemeInfo extends Contribution {
+public class ThemeContribution extends Contribution {
     String label;
     String uiTheme;
     String path;
@@ -63,7 +63,7 @@ public class VsixThemeInfo extends Contribution {
         return label;
     }
 
-    public VsixThemeInfo setLabel(String s) {
+    public ThemeContribution setLabel(String s) {
         // properties.set("label", s);
         label = s;
         return this;
@@ -74,7 +74,7 @@ public class VsixThemeInfo extends Contribution {
         return uiTheme;
     }
 
-    public VsixThemeInfo setUiTheme(String s) {
+    public ThemeContribution setUiTheme(String s) {
         // properties.set("uiTheme", s);
         uiTheme = s;
         return this;
@@ -89,7 +89,7 @@ public class VsixThemeInfo extends Contribution {
         return path;
     }
 
-    public VsixThemeInfo setPath(String s) {
+    public ThemeContribution setPath(String s) {
         // properties.set("path", s);
         path = s;
         return this;
@@ -99,7 +99,7 @@ public class VsixThemeInfo extends Contribution {
         return name;
     }
 
-    public VsixThemeInfo setName(String s) {
+    public ThemeContribution setName(String s) {
         name = s;
         return this;
     }
@@ -108,7 +108,7 @@ public class VsixThemeInfo extends Contribution {
         return type;
     }
 
-    public VsixThemeInfo setType(String s) {
+    public ThemeContribution setType(String s) {
         type = s;
         return this;
     }
@@ -117,7 +117,7 @@ public class VsixThemeInfo extends Contribution {
         return semanticHighlighting;
     }
 
-    public VsixThemeInfo setSemanticHighlighting(boolean b) {
+    public ThemeContribution setSemanticHighlighting(boolean b) {
         semanticHighlighting = b;
         return this;
     }

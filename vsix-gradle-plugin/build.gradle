@@ -1,11 +1,11 @@
 plugins {
     id 'java'
     id 'java-gradle-plugin'
-    id("com.gradle.plugin-publish") version "1.2.1"
+    id 'com.gradle.plugin-publish' version '2.1.0'
 }
 
 group = 'io.github.qishr'
-version = '0.1.0'
+version = '0.1.1'
 
 
 tasks.withType(JavaCompile).configureEach {
@@ -27,15 +27,20 @@ dependencies {
 }
 
 gradlePlugin {
-    website = "https://github.com/qishr/cascara-format-vsix"
+    website = "https://qishr.github.io/cascara/file-formats/vsix/gradle-plugin/"
     vcsUrl = "https://github.com/qishr/cascara-format-vsix.git"
     plugins {
-        javaLibraryConventions {
+        vsixPlugin {
             id = "io.github.qishr.cascara-gradle-plugins.vsix"
             implementationClass = "io.github.qishr.cascara.gradle.vsix.VsixPlugin"
             displayName = 'Cascara VSIX Packaging Plugin'
             description = 'Declarative Gradle plugin for packaging VS Code VSIX extension bundles without requiring Node.js or vsce.'
-            tags = ['cascara', 'vsix', 'vscode', 'packaging', 'extension']
+            tags = ['cascara', 'vsix', 'file-format', 'vscode', 'packaging', 'extension']
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }

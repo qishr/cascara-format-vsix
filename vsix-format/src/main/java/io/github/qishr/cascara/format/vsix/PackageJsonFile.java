@@ -165,7 +165,7 @@ public class PackageJsonFile {
         return contributes;
     }
 
-    public PackageJsonFile addTheme(VsixThemeInfo c) {
+    public PackageJsonFile addTheme(ThemeContribution c) {
         final String groupName = "themes";
         List<Contribution> group = contributes.get(groupName);
         if (group == null) {

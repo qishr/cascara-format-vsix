@@ -1,5 +1,7 @@
 package io.github.qishr.cascara.gradle.vsix;
 
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
@@ -12,10 +14,17 @@ import javax.inject.Inject;
 
 public abstract class VsixExtension {
 
+    // Common
     public abstract RegularFileProperty getReadme();
     public abstract RegularFileProperty getLicense();
     public abstract RegularFileProperty getChangeLog();
     public abstract DirectoryProperty getImagesDir();
+
+    // Languages and Syntaxes/Grammars
+    public abstract ConfigurableFileCollection getGrammars();
+    private final NamedDomainObjectContainer<LanguageExtension> languages;
+
+    // Themes
     public abstract ConfigurableFileCollection getThemes();
 
     // Nested Manifest Specs
@@ -36,6 +45,20 @@ public abstract class VsixExtension {
         getCategories().convention(objects.listProperty(String.class));
         getEngines().convention(objects.mapProperty(String.class, String.class));
         getRepository().convention(objects.mapProperty(String.class, String.class));
+
+        // Create container for languages using ObjectFactory
+        this.languages = objects.domainObjectContainer(
+            LanguageExtension.class,
+            languageId -> objects.newInstance(LanguageExtension.class, languageId)
+        );
+    }
+
+    public NamedDomainObjectContainer<LanguageExtension> getLanguages() {
+        return languages;
+    }
+
+    public void languages(Action<? super NamedDomainObjectContainer<LanguageExtension>> action) {
+        action.execute(languages);
     }
 
     public void categories(String... items) {
