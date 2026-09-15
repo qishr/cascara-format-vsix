@@ -14,6 +14,8 @@ public class VsixPlugin implements Plugin<Project> {
         VsixExtension extension = project.getExtensions().create("vsix", VsixExtension.class);
 
         TaskProvider<PackageVsixTask> packageVsix = project.getTasks().register("packageVsix", PackageVsixTask.class, task -> {
+            String packageName = extension.getName().getOrElse(project.getName());
+
             task.setGroup("distribution");
             task.setDescription("Packages VS Code extension VSIX archive");
 
@@ -31,7 +33,7 @@ public class VsixPlugin implements Plugin<Project> {
             task.getThemeFiles().from(extension.getThemes());
 
             // Bind structured manifest fields
-            task.getManifestName().convention(extension.getName().orElse(project.getName()));
+            task.getManifestName().convention(packageName);
             task.getManifestVersion().convention(extension.getVersion().orElse(project.provider(() -> project.getVersion().toString())));
             task.getManifestDisplayName().set(extension.getDisplayName());
             task.getManifestDescription().set(extension.getDescription());
@@ -44,44 +46,24 @@ public class VsixPlugin implements Plugin<Project> {
 
             // Default output location
             task.getOutputFile().convention(
-                project.getLayout().getBuildDirectory().file("distributions/" + project.getName() + ".vsix")
+                project.getLayout().getBuildDirectory().file("distributions/" + packageName + ".vsix")
             );
         });
 
-        // Use Gradle's public NativePlatform API
-        OperatingSystem os = DefaultNativePlatform.getCurrentOperatingSystem();
-        String codeExecutable = os.isWindows() ? "code.cmd" : "code";
 
-        // Task: uninstallVsix
-        TaskProvider<Exec> uninstallVsix = project.getTasks().register("uninstallVsix", Exec.class, task -> {
+        // Task: uninstallVsix (Configuration Cache Safe)
+        TaskProvider<UninstallVsixTask> uninstallVsix = project.getTasks().register("uninstallVsix", UninstallVsixTask.class, task -> {
             task.setGroup("vscode");
             task.setDescription("Uninstalls the extension from VS Code.");
-
-            task.doFirst(t -> {
-                String publisher = extension.getPublisher().getOrElse("");
-                String name = extension.getName().getOrElse("");
-
-                if (publisher.isBlank() || name.isBlank()) {
-                    throw new IllegalStateException("vsix.publisher and vsix.name must be configured to uninstall.");
-                }
-
-                String extensionId = publisher + "." + name;
-                project.getLogger().lifecycle("Uninstalling extension from VS Code: " + extensionId);
-                ((Exec) t).commandLine(codeExecutable, "--uninstall-extension", extensionId);
-            });
+            task.getPublisher().set(extension.getPublisher());
+            task.getExtensionName().set(extension.getName().orElse(project.getName()));
         });
 
-        // Task: installVsix
-        TaskProvider<Exec> installVsix = project.getTasks().register("installVsix", Exec.class, task -> {
+        // Task: installVsix (Configuration Cache Safe)
+        TaskProvider<InstallVsixTask> installVsix = project.getTasks().register("installVsix", InstallVsixTask.class, task -> {
             task.setGroup("vscode");
             task.setDescription("Installs the generated VSIX package into VS Code.");
-            task.dependsOn(packageVsix);
-
-            task.doFirst(t -> {
-                var vsixFile = packageVsix.get().getOutputFile().get().getAsFile();
-                project.getLogger().lifecycle("Installing extension into VS Code: " + vsixFile.getName());
-                ((Exec) t).commandLine(codeExecutable, "--install-extension", vsixFile.getAbsolutePath(), "--force");
-            });
+            task.getVsixFile().set(packageVsix.flatMap(PackageVsixTask::getOutputFile));
         });
 
         // Task: reinstallVsix
@@ -91,7 +73,58 @@ public class VsixPlugin implements Plugin<Project> {
             task.dependsOn(uninstallVsix, installVsix);
         });
 
-        // Ensure uninstall executes before install when running reinstallVsix
         installVsix.configure(task -> task.mustRunAfter(uninstallVsix));
+
+
+        // // Use Gradle's public NativePlatform API
+        // OperatingSystem os = DefaultNativePlatform.getCurrentOperatingSystem();
+        // String codeExecutable = os.isWindows() ? "code.cmd" : "code";
+
+        // // Task: uninstallVsix
+        // TaskProvider<Exec> uninstallVsix = project.getTasks().register("uninstallVsix", Exec.class, task -> {
+        //     task.setGroup("vscode");
+        //     task.setDescription("Uninstalls the extension from VS Code.");
+
+        //     task.doFirst(t -> {
+        //         String publisher = extension.getPublisher().getOrElse("");
+        //         // String packageName = extension.getName().getOrElse("");
+        //         String packageName = extension.getName().getOrElse(project.getName());
+
+        //         if (publisher.isBlank() || packageName.isBlank()) {
+        //             throw new IllegalStateException("vsix.publisher and vsix.name must be configured to uninstall.");
+        //         }
+
+        //         String extensionId = publisher + "." + packageName;
+        //         project.getLogger().lifecycle("Uninstalling extension from VS Code: " + extensionId);
+        //         ((Exec) t).commandLine(codeExecutable, "--uninstall-extension", extensionId);
+        //     });
+        // });
+
+        // // Task: installVsix
+        // TaskProvider<Exec> installVsix = project.getTasks().register("installVsix", Exec.class, task -> {
+        //     task.setGroup("vscode");
+        //     task.setDescription("Installs the generated VSIX package into VS Code.");
+        //     task.dependsOn(packageVsix);
+
+        //     task.doFirst(t -> {
+        //         var execTask = (Exec) t;
+        //         execTask.environment("NODE_NO_WARNINGS", "1");
+
+        //         var vsixFile = packageVsix.get().getOutputFile().get().getAsFile();
+        //         project.getLogger().lifecycle("Installing extension into VS Code: " + vsixFile.getName());
+
+        //         execTask.commandLine(codeExecutable, "--install-extension", vsixFile.getAbsolutePath(), "--force");
+        //     });
+        // });
+
+        // // Task: reinstallVsix
+        // project.getTasks().register("reinstallVsix", task -> {
+        //     task.setGroup("vscode");
+        //     task.setDescription("Uninstalls and then installs the generated VSIX package into VS Code.");
+        //     task.dependsOn(uninstallVsix, installVsix);
+        // });
+
+        // // Ensure uninstall executes before install when running reinstallVsix
+        // installVsix.configure(task -> task.mustRunAfter(uninstallVsix));
     }
 }

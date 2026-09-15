@@ -4,14 +4,9 @@ plugins {
     id 'com.gradle.plugin-publish' version '2.1.0'
 }
 
-group = 'io.github.qishr'
-version = '0.1.1'
-
-
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }
-
 
 repositories {
 	mavenLocal()

@@ -531,6 +531,7 @@ public class VsixPackage extends ArchiveFile {
     }
 
     private void addThemeFileInternal(Path path, String entryName) throws LocalizableIOException {
+        // reporter.debug("addThemeFileInternal");
         super.addFile(path, DIR_THEMES + path.getFileName());
         // extract metadata from theme JSON into Package JSON
         String jsonString;
@@ -548,6 +549,7 @@ public class VsixPackage extends ArchiveFile {
     }
 
     private void extractUiThemeMetadata(String jsonString, String entryName) {
+        // reporter.debug("extractUiThemeMetadata");
         JsonObject root = parseJson(jsonString, entryName);
 
         if (!pkgJsonFile.getCategories().contains(CATEGORIES_THEMES)) {
