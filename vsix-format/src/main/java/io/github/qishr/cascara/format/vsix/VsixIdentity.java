@@ -1,7 +1,5 @@
 package io.github.qishr.cascara.format.vsix;
 
-import java.util.UUID;
-
 public class VsixIdentity {
     private static final String MODULE_NAME = "cascara.format.vsix";
 
@@ -28,9 +26,6 @@ public class VsixIdentity {
 	}
 
 	public VsixIdentity setId(String id) {
-		if (id == null) {
-			id = MODULE_NAME + "." + UUID.randomUUID();
-		}
 		this.id = id;
         return this;
 	}

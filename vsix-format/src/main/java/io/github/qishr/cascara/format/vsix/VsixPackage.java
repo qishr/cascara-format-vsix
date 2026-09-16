@@ -73,9 +73,9 @@ public class VsixPackage extends ArchiveFile {
     private static final String DIR_THEMES = DIR_EXTENSION + "themes/";
 
     private static final String ENTRY_CHANGELOG = DIR_EXTENSION + "CHANGELOG.md";
-    private static final String ENTRY_CONTENT_TYPES = DIR_EXTENSION + "[Content_Types].xml";
+    private static final String ENTRY_CONTENT_TYPES = "[Content_Types].xml";
     private static final String ENTRY_LICENSE = DIR_EXTENSION + "LICENSE.md";
-    private static final String ENTRY_MANIFEST_XML = DIR_EXTENSION + "extension.vsixmanifest";
+    private static final String ENTRY_MANIFEST_XML = "extension.vsixmanifest";
     private static final String ENTRY_PACKAGE_JSON = DIR_EXTENSION + "package.json";
     private static final String ENTRY_README = DIR_EXTENSION + "README.md";
     private static final String ENTRY_LANGUAGE_CONFIGURATION = DIR_EXTENSION + "language-configuration.json";
@@ -201,6 +201,7 @@ public class VsixPackage extends ArchiveFile {
 
     public VsixPackage setName(String s) {
         pkgJsonFile.setName(s);
+        identity.setId(s);
         return this;
     }
 
@@ -704,8 +705,14 @@ public class VsixPackage extends ArchiveFile {
         sb.append(pkgJsonFile.getDescription());
         sb.append("</Description>\n");
 
-        sb.append("\t\t\t<Tags>theme,color-theme,__web_extension</Tags>\n");
-        sb.append("\t\t\t<Categories>Themes</Categories>\n");
+        sb.append("\t\t\t<Tags>");
+        // TODO
+        sb.append("</Tags>\n");
+
+        sb.append("\t\t\t<Categories>");
+        sb.append(pkgJsonFile.getCategories().getFirst());
+        sb.append("</Categories>\n");
+
         sb.append("\t\t\t<GalleryFlags>Public</GalleryFlags>\n");
         sb.append("\t\t\t<Properties>\n");
         sb.append("\t\t\t\t<Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.103.0\" />\n");
@@ -716,6 +723,10 @@ public class VsixPackage extends ArchiveFile {
         sb.append("\t\t\t\t<Property Id=\"Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown\" Value=\"true\" />\n");
         sb.append("\t\t\t\t<Property Id=\"Microsoft.VisualStudio.Services.Content.Pricing\" Value=\"Free\"/>\n");
         sb.append("\t\t\t</Properties>\n");
+
+        // TODO: Make this dynamic
+        sb.append("\t\t\t<Icon>extension/images/icon.png</Icon>\n");
+
         sb.append("\t\t</Metadata>\n");
         sb.append("\t\t<Installation>\n");
         sb.append("\t\t\t<InstallationTarget Id=\"Microsoft.VisualStudio.Code\"/>\n");
@@ -732,6 +743,9 @@ public class VsixPackage extends ArchiveFile {
             sb.append("\t\t\t<Asset Type=\"Microsoft.VisualStudio.Services.Content.Changelog\" Path=\"extension/CHANGELOG.md\" Addressable=\"true\" />\n");
         }
 
+        // TODO: Make this dynamic
+        sb.append("\t\t\t<Asset Type=\"Microsoft.VisualStudio.Services.Icons.Default\" Path=\"extension/images/icon.png\" Addressable=\"true\" />\n");
+
         sb.append("\t\t</Assets>\n");
         sb.append("\t</PackageManifest>");
         return sb.toString();
@@ -742,9 +756,15 @@ public class VsixPackage extends ArchiveFile {
     //
 
     private String getContentTypesXmlContent() {
+        // TODO: Make this dynamic
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-        sb.append("<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\".json\" ContentType=\"application/json\"/><Default Extension=\".vsixmanifest\" ContentType=\"text/xml\"/><Default Extension=\".md\" ContentType=\"text/markdown\"/></Types>\n");
+        sb.append("<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">");
+        sb.append("<Default Extension=\".json\" ContentType=\"application/json\"/>");
+        sb.append("<Default Extension=\".vsixmanifest\" ContentType=\"text/xml\"/>");
+        sb.append("<Default Extension=\".md\" ContentType=\"text/markdown\"/>");
+        sb.append("<Default Extension=\".png\" ContentType=\"image/png\"/>");
+        sb.append("</Types>\n");
         return sb.toString();
     }
 
