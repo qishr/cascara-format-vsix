@@ -37,7 +37,7 @@ package io.github.qishr.cascara.format.vsix;
 import io.github.qishr.cascara.common.annotation.DataIgnore;
 import io.github.qishr.cascara.common.property.Properties;
 
-public class ThemeContribution extends Contribution {
+public final class ThemeContribution extends Contribution {
     String label;
     String uiTheme;
     String path;

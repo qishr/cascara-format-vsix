@@ -1,0 +1,52 @@
+{
+    "name": "test-theme",
+    "publisher": "Cascara",
+    "displayName": "Test Theme",
+    "description": "Test Description.",
+    "version": "6.6.6",
+    "author": {
+      "name": "Dave",
+      "url": "https://badger.com",
+      "email": "dave@badger.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/badger/test-theme.git"
+    },
+    "bugs": {
+      "url": "https://github.com/badger/test-theme",
+      "email": "dave@badger.com"
+    },
+    "homepage": "https://github.com/lab829/aloe/blob/master/README.md",
+    "license": "MIT",
+    "icon": "images/test.png",
+    "galleryBanner": {
+      "color": "#cafe00",
+      "theme": "dark"
+    },
+    "engines": {
+      "vscode": "^1.70.0"
+    },
+    "categories": [
+      "Themes"
+    ],
+    "keywords": [
+      "Themes",
+      "Dark Theme",
+      "color-theme"
+    ],
+    "scripts": {
+      "release:patch": "vsce publish patch && git push && git push --tags",
+      "release:minor": "vsce publish minor && git push && git push --tags",
+      "release:major": "vsce publish major && git push && git push --tags"
+    },
+    "contributes": {
+      "themes": [
+        {
+          "label": "Test Theme Label",
+          "uiTheme": "vs-dark",
+          "path": "./themes/test-theme.json"
+        }
+      ]
+    }
+  }

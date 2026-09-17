@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import io.github.qishr.cascara.common.annotation.Nullable;
@@ -51,7 +52,6 @@ import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
 import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
 import io.github.qishr.cascara.common.diagnostic.NoOpReporter;
 import io.github.qishr.cascara.common.diagnostic.Reporter;
-import io.github.qishr.cascara.common.diagnostic.StandardReporter;
 import io.github.qishr.cascara.common.diagnostic.UnimplementedMethodException;
 import io.github.qishr.cascara.common.diagnostic.code.GenericDiagnosticCode;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
@@ -88,12 +88,12 @@ public class VsixPackage extends ArchiveFile {
     private static final String CONTRIBUTES_THEMES = "themes";
 
     private boolean closed = false;
+    private boolean modified = false;
     private VsixIdentity identity = new VsixIdentity();
     private PackageJsonFile pkgJsonFile = new PackageJsonFile();
     private Set<String> optionalFiles = new HashSet<>();
 
     Reporter reporter = new NoOpReporter();
-    // Reporter reporter = new StandardReporter().setLevel(Level.DEBUG);
 
     private final Map<String, SpecialFileHandler> fileHandlers = Map.of(
         ENTRY_PACKAGE_JSON, this::addPackageJsonFile,
@@ -117,6 +117,17 @@ public class VsixPackage extends ArchiveFile {
         super(vsixPath, create);
     }
 
+    public static String normalizeEntry(String baseDir, String relEntryName) {
+        if (relEntryName.startsWith("./")) {
+            String rel = relEntryName.substring(2);
+            if (baseDir.endsWith("/")) {
+                return baseDir + rel;
+            }
+            return baseDir + "/" + rel;
+        }
+        return relEntryName;
+    }
+
     //
     // Instantiation Methods
     //
@@ -126,12 +137,14 @@ public class VsixPackage extends ArchiveFile {
         String vsixManifest = new String(extractFile(vsixPath, ENTRY_MANIFEST_XML));
         VsixPackage vsix = new VsixPackage(vsixPath, false);
         vsix.parseManifestXml(vsixManifest);
-        vsix.parsePackageManifest(packageInfo);
+        vsix.parsePackageJson(packageInfo);
+        vsix.modified = false;
         return vsix;
     }
 
     public static VsixPackage create(Path vsixPath) throws LocalizableIOException {
         VsixPackage vsix = new VsixPackage(vsixPath, true);
+        vsix.modified = true;
         return vsix;
     }
 
@@ -144,6 +157,8 @@ public class VsixPackage extends ArchiveFile {
         // Return the virtual package.json as the actual file isn't written until close/flush time.
         if (entryName.equals(ENTRY_PACKAGE_JSON)) {
             return getPackageJsonContent().getBytes();
+        } else if (entryName.equals(ENTRY_MANIFEST_XML)) {
+            return getManifestXmlContent().getBytes();
         } else {
             return super.extractFile(entryName);
         }
@@ -184,6 +199,11 @@ public class VsixPackage extends ArchiveFile {
     //
     // Getters and Setters
     //
+
+    public VsixPackage setReporter(Reporter reporter) {
+        this.reporter = reporter;
+        return this;
+    }
 
     public VsixIdentity getIdentity() {
         return identity;
@@ -392,14 +412,23 @@ public class VsixPackage extends ArchiveFile {
 
 	public void flush() throws LocalizableIOException {
         if (!closed) {
-            reporter.debug("Flushing");
-            enumerateOptionalFiles();
-            String contentTypesXmlContent = getContentTypesXmlContent();
-            String manifestXmlContent = getManifestXmlContent();
-            String packageJsonContent = getPackageJsonContent();
-            super.addFile(contentTypesXmlContent, ENTRY_CONTENT_TYPES);
-            super.addFile(manifestXmlContent, ENTRY_MANIFEST_XML);
-            super.addFile(packageJsonContent, ENTRY_PACKAGE_JSON);
+            if (modified) {
+                reporter.debug("Flushing");
+
+                enumerateOptionalFiles();
+
+                String contentTypesXmlContent = getContentTypesXmlContent();
+                String manifestXmlContent = getManifestXmlContent();
+                String packageJsonContent = getPackageJsonContent();
+
+                reporter.getWriter(Level.DEBUG).write(2, packageJsonContent);
+
+                super.addFile(contentTypesXmlContent, ENTRY_CONTENT_TYPES);
+                super.addFile(manifestXmlContent, ENTRY_MANIFEST_XML);
+                super.addFile(packageJsonContent, ENTRY_PACKAGE_JSON);
+            } else {
+                reporter.debug("Not Flushing");
+            }
         }
 	}
 
@@ -439,21 +468,25 @@ public class VsixPackage extends ArchiveFile {
             throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
 		}
         extractGrammarMetadata(jsonString, entryName);
+        modified = true;
     }
 
     private void extractGrammarMetadata(String jsonString, String entryName) {
         JsonObject root = parseJson(jsonString, entryName);
 
-        if (!pkgJsonFile.getCategories().contains(CATEGORIES_LANGUAGES)) {
-            // TODO: Use a set instead of a list for this
-            pkgJsonFile.getCategories().add(CONTRIBUTES_LANGUAGES);
-        }
+        // if (!pkgJsonFile.getCategories().contains(CATEGORIES_LANGUAGES)) {
+        //     // TODO: Use a set instead of a list for this
+        //     pkgJsonFile.getCategories().add(CONTRIBUTES_LANGUAGES);
+        // }
 
-        List<Contribution> grammarsGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_GRAMMARS);
-        if (grammarsGroup == null) {
-            grammarsGroup = new ArrayList<>();
-            pkgJsonFile.getContributions().put(CONTRIBUTES_GRAMMARS, grammarsGroup);
-        }
+        // List<Contribution> grammarsGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_GRAMMARS);
+        // if (grammarsGroup == null) {
+        //     grammarsGroup = new ArrayList<>();
+        //     pkgJsonFile.getContributions().put(CONTRIBUTES_GRAMMARS, grammarsGroup);
+        // }
+
+        List<Contribution> grammarsGroup = ensureContributions(CATEGORIES_LANGUAGES, CONTRIBUTES_GRAMMARS);
+
 
         // Is theme in languagesGroup?
         GrammarContribution contribution = null;
@@ -466,7 +499,7 @@ public class VsixPackage extends ArchiveFile {
             }
             reporter.debug("[egm] candidateContribution: " + candidateContribution);
 
-            String candidateEntryName = relativeToAbsoluteEntry(DIR_EXTENSION, candidateContribution);
+            String candidateEntryName = normalizeEntry(DIR_EXTENSION, candidateContribution);
             reporter.debug("[egm] Candidate: " + candidateEntryName);
             if (candidateEntryName.equals(entryName)) {
                 reporter.debug("[egm] Match: " + candidateEntryName);
@@ -531,6 +564,20 @@ public class VsixPackage extends ArchiveFile {
         // TODO
     }
 
+    private List<Contribution> ensureContributions(String category, String contibution) {
+        if (!pkgJsonFile.getCategories().contains(category)) {
+            // TODO: Use a set instead of a list for this
+            pkgJsonFile.getCategories().add(category);
+        }
+
+        List<Contribution> themesGroup = pkgJsonFile.getContributions().get(contibution);
+        if (themesGroup == null) {
+            themesGroup = new ArrayList<>();
+            pkgJsonFile.getContributions().put(contibution, themesGroup);
+        }
+        return themesGroup;
+    }
+
     private void addThemeFileInternal(Path path, String entryName) throws LocalizableIOException {
         // reporter.debug("addThemeFileInternal");
         super.addFile(path, DIR_THEMES + path.getFileName());
@@ -542,6 +589,7 @@ public class VsixPackage extends ArchiveFile {
             throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
 		}
         extractUiThemeMetadata(jsonString, entryName);
+        modified = true;
     }
 
     private void addThemeContentInternal(String content, String entryName) throws LocalizableIOException {
@@ -553,22 +601,27 @@ public class VsixPackage extends ArchiveFile {
         // reporter.debug("extractUiThemeMetadata");
         JsonObject root = parseJson(jsonString, entryName);
 
-        if (!pkgJsonFile.getCategories().contains(CATEGORIES_THEMES)) {
-            // TODO: Use a set instead of a list for this
-            pkgJsonFile.getCategories().add(CONTRIBUTES_THEMES);
-        }
+        // if (!pkgJsonFile.getCategories().contains(CATEGORIES_THEMES)) {
+        //     // TODO: Use a set instead of a list for this
+        //     pkgJsonFile.getCategories().add(CONTRIBUTES_THEMES);
+        // }
 
-        List<Contribution> themesGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
-        if (themesGroup == null) {
-            themesGroup = new ArrayList<>();
-            pkgJsonFile.getContributions().put(CONTRIBUTES_THEMES, themesGroup);
-        }
+        // List<Contribution> themesGroup = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
+        // if (themesGroup == null) {
+        //     themesGroup = new ArrayList<>();
+        //     pkgJsonFile.getContributions().put(CONTRIBUTES_THEMES, themesGroup);
+        // }
 
-        // Is theme in themesGroup?
+        List<Contribution> themesGroup = ensureContributions(CATEGORIES_THEMES, CONTRIBUTES_THEMES);
+
+
+        // // Is theme in themesGroup?
         ThemeContribution theme = null;
         for (Contribution c : themesGroup) {
+
             ThemeContribution candidate = (ThemeContribution)c; // TODO: Type safety
-            String candidateEntryName = relativeToAbsoluteEntry(DIR_EXTENSION, candidate.getPath());
+
+            String candidateEntryName = normalizeEntry(DIR_EXTENSION, candidate.getPath());
             reporter.debug("Candidate: " + candidateEntryName);
             if (candidateEntryName.equals(entryName)) {
                 reporter.debug("Match: " + candidateEntryName);
@@ -583,8 +636,9 @@ public class VsixPackage extends ArchiveFile {
 
         if (theme == null) {
             // Create it
-            String relEntryName = "./" + entryName.substring(DIR_EXTENSION.length());
+            String relEntryName = DIR_EXTENSION + entryName.substring(DIR_EXTENSION.length());
             theme = new ThemeContribution();
+
             theme.setPath(relEntryName);
             themesGroup.add(theme);
         }
@@ -623,19 +677,43 @@ public class VsixPackage extends ArchiveFile {
     }
 
     private void setPackageJsonContent(String content) throws LocalizableIOException {
-        parsePackageManifest(content);
+        parsePackageJson(content);
     }
 
     private String getPackageJsonContent() {
         JsonSerializer serializer = new JsonSerializer();
+        serializer.setOptions(new JsonOptions().setTrackPosition(true));
         return serializer.toString(pkgJsonFile);
     }
 
-    private void parsePackageManifest(String jsonString) throws LocalizableIOException {
+    private void parsePackageJson(String jsonString) throws LocalizableIOException {
         if (jsonString == null || jsonString.isBlank()) return;
 
+        // reporter.getWriter(Level.DEBUG).write(2, jsonString);
+
         JsonSerializer serializer = new JsonSerializer();
+        serializer.setOptions(new JsonOptions().setTrackPosition(true));
         pkgJsonFile = serializer.fromString(jsonString, PackageJsonFile.class);
+
+        if (!pkgJsonFile.getContributions().isEmpty()) {
+            if (pkgJsonFile.getContributions().values().toArray()[0] instanceof ThemeContribution t)
+            reporter.debug("Theme: " + t.getName());
+        }
+
+        for (Entry<String,List<Contribution>> entry : pkgJsonFile.getContributions().entrySet()) {
+            if (entry.getKey().equals(CONTRIBUTES_THEMES)) {
+                for (Contribution contrib : entry.getValue()) {
+                    processTheme((ThemeContribution)contrib);
+                }
+            }
+        }
+    }
+
+    private void processTheme(ThemeContribution theme) {
+        String themePath = theme.getPath();
+        String entryName = normalizeEntry(DIR_EXTENSION, themePath);
+        String json = new String(extractFile(entryName));
+        extractUiThemeMetadata(json, entryName);
     }
 
     //
@@ -710,7 +788,9 @@ public class VsixPackage extends ArchiveFile {
         sb.append("</Tags>\n");
 
         sb.append("\t\t\t<Categories>");
-        sb.append(pkgJsonFile.getCategories().getFirst());
+        if (!pkgJsonFile.getCategories().isEmpty()) {
+            sb.append(pkgJsonFile.getCategories().getFirst());
+        }
         sb.append("</Categories>\n");
 
         sb.append("\t\t\t<GalleryFlags>Public</GalleryFlags>\n");
@@ -771,14 +851,6 @@ public class VsixPackage extends ArchiveFile {
     //
     // Helpers
     //
-
-    private String relativeToAbsoluteEntry(String baseDir, String entryName) {
-        if (entryName.startsWith("./")) {
-            String rel = entryName.substring(2);
-            return baseDir + rel;
-        }
-        return entryName;
-    }
 
     private JsonObject parseJson(String jsonString, String entryName) {
         JsonAstParser jsonAstParser = new JsonAstParser().setOptions(JsonOptions.JSON5);

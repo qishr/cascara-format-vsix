@@ -1,11 +1,6 @@
 package io.github.qishr.cascara.format.vsix;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import io.github.qishr.cascara.common.annotation.DataIgnore;
-
-public class GrammarContribution extends Contribution {
+public final class GrammarContribution extends Contribution {
     String language;
     String scopeName;
     // List<String> fileTypes = new ArrayList<>();

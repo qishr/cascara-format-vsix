@@ -1,0 +1,7 @@
+{
+    "name": "TestTheme",
+    "type": "dark",
+    "colors": {
+      "editor.background": "#cafe00"
+    }
+}

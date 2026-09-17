@@ -26,6 +26,10 @@ public class ManifestXmlTests  extends ArchiveTestBase {
         pkg.flush();
 
         String manifestXml = new String(pkg.extractFile(ENTRY_MANIFEST_XML));
+
+        // TODO: Remove this
+        // System.err.println(manifestXml);
+
         assertTrue(manifestXml.contains("v-id"));
         assertTrue(manifestXml.contains("v-publisher"));
         assertTrue(manifestXml.contains("0.1.0"));

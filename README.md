@@ -138,9 +138,8 @@ Add the plugin alongside `cascara-gradle-plugins.ct` in your `build.gradle`:
 
 ```groovy
 plugins {
-    id 'io.github.qishr.cascara-gradle-plugins.ct' version '0.1.0'
-    id 'io.github.qishr.cascara-gradle-plugins.vsix' version '0.1.0'
     id 'base'
+    id 'io.github.qishr.cascara-gradle-plugins.vsix' version '0.2.3'
 }
 ```
 
@@ -149,13 +148,6 @@ plugins {
 Define metadata and source resources inside the `vsix` extension block:
 
 ```groovy
-ct {
-    themes {
-        retroAmberOnBrightBeige { entry = "retro-amber-on-bright-beige.ct"; format = "vscode" }
-        retroGreenOnHeavyMetal  { entry = "retro-green-on-heavy-metal.ct";  format = "vscode" }
-    }
-}
-
 vsix {
     name        = "cascara-retro-theme"
     displayName = "Cascara Retro Theme"
@@ -180,17 +172,7 @@ vsix {
     changeLog   = layout.projectDirectory.file("CHANGELOG.md")
     imagesDir   = layout.projectDirectory.dir("src/main/resources/vscode/images")
 
-    // Pulls compiled JSON output from cascara-gradle-plugins.ct
     themes.from(layout.buildDirectory.dir("themes"))
-}
-
-// Ensure execution lifecycle
-tasks.named('packageVsix') {
-    dependsOn compileAllCt
-}
-
-tasks.named('build') {
-    dependsOn tasks.named('packageVsix')
 }
 ```
 

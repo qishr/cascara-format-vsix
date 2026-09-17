@@ -3,7 +3,7 @@ package io.github.qishr.cascara.format.vsix;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LanguageContribution extends Contribution {
+public final class LanguageContribution extends Contribution {
     String id;
     List<String> aliases = new ArrayList<>();
     List<String> extensions = new ArrayList<>();

@@ -1,14 +1,14 @@
 {
     "java.configuration.updateBuildConfiguration": "disabled",
     "java.test.config": {
-        "modulePaths": ["${workspaceFolder}/build/modulepath"],
+        "modulePaths": ["${workspaceFolder}/vsix-format/build/modulepath"],
         "module": "cascara.format.vsix",
         "vmArgs": [
             "--module-path",
-            "${workspaceFolder}/build/modulepath",
+            "${workspaceFolder}/vsix-format/build/modulepath",
         ],
         "java.project.referencedLibraries": [
-            "${workspaceFolder}/build/modulepath/*.jar"
+            "${workspaceFolder}/vsix-format/build/modulepath/*.jar"
         ]
     },
     "workbench.colorTheme": "Cascara Retro Green on Dull Beige",
