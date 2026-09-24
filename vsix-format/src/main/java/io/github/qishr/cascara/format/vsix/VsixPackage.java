@@ -153,7 +153,7 @@ public class VsixPackage extends ArchiveFile {
     //
 
     @Override
-    public byte[] extractFile(String entryName) {
+    public byte[] extractFile(String entryName) throws LocalizableIOException {
         // Return the virtual package.json as the actual file isn't written until close/flush time.
         if (entryName.equals(ENTRY_PACKAGE_JSON)) {
             return getPackageJsonContent().getBytes();
@@ -712,8 +712,12 @@ public class VsixPackage extends ArchiveFile {
     private void processTheme(ThemeContribution theme) {
         String themePath = theme.getPath();
         String entryName = normalizeEntry(DIR_EXTENSION, themePath);
+        try {
         String json = new String(extractFile(entryName));
-        extractUiThemeMetadata(json, entryName);
+            extractUiThemeMetadata(json, entryName);
+        } catch (LocalizableIOException e) {
+
+        }
     }
 
     //
