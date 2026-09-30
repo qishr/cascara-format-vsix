@@ -9,9 +9,12 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
+import io.github.qishr.cascara.common.diagnostic.GlobalReporter;
 import io.github.qishr.cascara.common.diagnostic.StandardReporter;
 import io.github.qishr.cascara.common.util.ArchiveFile.EntryInfo;
 
@@ -45,6 +48,17 @@ public abstract class ArchiveTestBase {
 
     @TempDir
     protected Path tempDir;
+
+    @BeforeEach
+    protected void setUp() throws IOException {
+        GlobalReporter.globalInstance().setLevel(Level.TRACE);
+        // super.setUp();
+    }
+
+    @AfterEach
+    protected void tearDown() throws IOException {
+        // super.tearDown();
+    }
 
     protected void assertContainsFile(String fileName, List<EntryInfo> files, Path pkgPath) throws IOException {
         for (EntryInfo info : files) {

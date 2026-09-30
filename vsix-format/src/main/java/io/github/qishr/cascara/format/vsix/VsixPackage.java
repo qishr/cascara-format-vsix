@@ -53,7 +53,7 @@ import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
 import io.github.qishr.cascara.common.diagnostic.NoOpReporter;
 import io.github.qishr.cascara.common.diagnostic.Reporter;
 import io.github.qishr.cascara.common.diagnostic.UnimplementedMethodException;
-import io.github.qishr.cascara.common.diagnostic.code.GenericDiagnosticCode;
+import io.github.qishr.cascara.common.diagnostic.message.GenericMessage;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
 import io.github.qishr.cascara.common.util.ArchiveFile;
 import io.github.qishr.cascara.lang.json.ast.JsonNode;
@@ -63,7 +63,7 @@ import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
 import io.github.qishr.cascara.lang.json.util.JsonOptions;
 import io.github.qishr.cascara.lang.xml.ast.XmlNode;
 import io.github.qishr.cascara.lang.xml.processor.XmlAstParser;
-import io.github.qishr.cascara.schema.diagnostic.SchemaDiagnosticCode;
+import io.github.qishr.cascara.schema.diagnostic.SchemaDiagnosticMessage;
 import io.github.qishr.cascara.schema.diagnostic.SchemaException;
 
 public class VsixPackage extends ArchiveFile {
@@ -351,7 +351,7 @@ public class VsixPackage extends ArchiveFile {
             addThemeContribution(theme);
         }
         else {
-            throw new VsixException(GenericDiagnosticCode.ERROR, "Unknown contribution type: " + contribution.getClass().getName());
+            throw new VsixException(GenericMessage.ERROR, "Unknown contribution type: " + contribution.getClass().getName());
         }
     }
 
@@ -465,7 +465,7 @@ public class VsixPackage extends ArchiveFile {
 		try {
 			jsonString = Files.readString(path);
 		} catch (IOException e) {
-            throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
+            throw new LocalizableIOException(e, GenericMessage.IO_ERROR, e.getMessage());
 		}
         extractGrammarMetadata(jsonString, entryName);
         modified = true;
@@ -545,11 +545,11 @@ public class VsixPackage extends ArchiveFile {
     private String getLanguageId(String grammarEntryName) {
         int lastSlash = grammarEntryName.lastIndexOf("/");
         if (lastSlash == -1 ) {
-            throw new VsixException(GenericDiagnosticCode.ERROR, "Invalid grammar filename: " + grammarEntryName);
+            throw new VsixException(GenericMessage.ERROR, "Invalid grammar filename: " + grammarEntryName);
         }
         int dot = grammarEntryName.indexOf(".", lastSlash);
         if (dot == -1 ) {
-            throw new VsixException(GenericDiagnosticCode.ERROR, "Invalid grammar filename: " + grammarEntryName);
+            throw new VsixException(GenericMessage.ERROR, "Invalid grammar filename: " + grammarEntryName);
         }
         String name = grammarEntryName.substring(lastSlash + 1, dot);
         return name;
@@ -586,7 +586,7 @@ public class VsixPackage extends ArchiveFile {
 		try {
 			jsonString = Files.readString(path);
 		} catch (IOException e) {
-            throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
+            throw new LocalizableIOException(e, GenericMessage.IO_ERROR, e.getMessage());
 		}
         extractUiThemeMetadata(jsonString, entryName);
         modified = true;
@@ -672,7 +672,7 @@ public class VsixPackage extends ArchiveFile {
 			String content = Files.readString(sourcePath);
             setPackageJsonContent(content);
 		} catch (IOException e) {
-            throw new LocalizableIOException(e, GenericDiagnosticCode.IO_ERROR, e.getMessage());
+            throw new LocalizableIOException(e, GenericMessage.IO_ERROR, e.getMessage());
 		}
     }
 
@@ -757,7 +757,7 @@ public class VsixPackage extends ArchiveFile {
             }
         }catch (Exception e) {
             e.printStackTrace();
-            throw new LocalizableRuntimeException(e, GenericDiagnosticCode.ERROR, e.getMessage());
+            throw new LocalizableRuntimeException(e, GenericMessage.ERROR, e.getMessage());
         }
     }
 
@@ -864,12 +864,12 @@ public class VsixPackage extends ArchiveFile {
         } catch (ParserException e) {
             e.setUri(URI.create(entryName));
             throw e;
-            // throw new LocalizableIOException(e, GenericDiagnosticCode.ERROR, e.getMessage());
+            // throw new LocalizableIOException(e, GenericMessage.ERROR, e.getMessage());
         }
         if (rootNode instanceof JsonObject rootObject) {
             return rootObject;
         }
-        throw new SchemaException(SchemaDiagnosticCode.ROOT_MUST_BE_MAP);
+        throw new SchemaException(SchemaDiagnosticMessage.ROOT_MUST_BE_MAP);
     }
 
     private void enumerateOptionalFiles() throws LocalizableIOException {

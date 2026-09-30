@@ -8,11 +8,13 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.qishr.cascara.common.diagnostic.GlobalReporter;
 import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
+import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
 import io.github.qishr.cascara.common.lang.ast.AstNode;
 import io.github.qishr.cascara.lang.json.processor.JsonConverter;
 import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
-import io.github.qishr.cascara.schema.Schema;
+import io.github.qishr.cascara.schema.util.Schema;
 import io.github.qishr.cascara.schema.util.CascaraSchemaUri;
 import io.github.qishr.cascara.schema.util.SchemaCompiler;
 import io.github.qishr.cascara.schema.util.SchemaGenerator;
@@ -20,6 +22,7 @@ import io.github.qishr.cascara.schema.util.SchemaGenerator;
 public class PackageJsonTests extends ArchiveTestBase {
     @Test
     void test() {
+
         PackageJsonFile jsonFile = new PackageJsonFile();
 
         // SchemaNode schemaNode;
@@ -28,7 +31,6 @@ public class PackageJsonTests extends ArchiveTestBase {
         AstNode schemaDoc = generator.generate(jsonFile);
         SchemaCompiler compiler = new SchemaCompiler();
         Schema schema = compiler.compile(schemaDoc, schemaUri.toUri());
-        // schemaNode = schema.getRoot();
 
         assertNotNull(schema);
         assertNotNull(schema.getRoot());
