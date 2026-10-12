@@ -14,12 +14,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
-import io.github.qishr.cascara.common.diagnostic.GlobalReporter;
-import io.github.qishr.cascara.common.diagnostic.StandardReporter;
+import io.github.qishr.cascara.common.diagnostic.report.GlobalReporter;
+import io.github.qishr.cascara.common.diagnostic.report.LocalReporter;
 import io.github.qishr.cascara.common.util.ArchiveFile.EntryInfo;
 
 public abstract class ArchiveTestBase {
-    protected StandardReporter reporter = new StandardReporter().setLevel(Level.DEBUG);
+    protected LocalReporter reporter = new LocalReporter().setLevel(Level.DEBUG);
 
     protected static final String LICENSE_FILE = "LICENSE";
     protected static final String README_FILE = "README.md";
@@ -51,7 +51,7 @@ public abstract class ArchiveTestBase {
 
     @BeforeEach
     protected void setUp() throws IOException {
-        GlobalReporter.globalInstance().setLevel(Level.TRACE);
+        GlobalReporter.globalInstance().setLevel(Level.INFO);
         // super.setUp();
     }
 

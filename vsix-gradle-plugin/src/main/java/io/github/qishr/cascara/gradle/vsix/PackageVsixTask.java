@@ -1,6 +1,6 @@
 package io.github.qishr.cascara.gradle.vsix;
 
-import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
 import io.github.qishr.cascara.format.vsix.VsixPackage;
 import io.github.qishr.cascara.format.vsix.LanguageContribution;
 import io.github.qishr.cascara.format.vsix.RepositoryInfo;

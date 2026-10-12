@@ -8,10 +8,10 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.qishr.cascara.common.diagnostic.GlobalReporter;
-import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
-import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
 import io.github.qishr.cascara.common.lang.ast.AstNode;
+import io.github.qishr.cascara.common.service.SPL;
+import io.github.qishr.cascara.common.service.ServiceMetadata;
 import io.github.qishr.cascara.lang.json.processor.JsonConverter;
 import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
 import io.github.qishr.cascara.schema.util.Schema;
@@ -64,6 +64,13 @@ public class PackageJsonTests extends ArchiveTestBase {
 
         JsonSerializer serializer = new JsonSerializer();
         json = serializer.toString(jsonFile);
+        assertNotNull(json);
+
+        // TODO: Disable this
+        // System.out.println("Providers:");
+        // for (ServiceMetadata m : SPL.getRoot().getProviders()) {
+        //     System.out.println("  " + m.getTypeName());
+        // }
     }
 
     @Test

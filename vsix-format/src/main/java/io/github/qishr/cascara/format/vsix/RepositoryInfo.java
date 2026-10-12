@@ -34,8 +34,8 @@
 
 package io.github.qishr.cascara.format.vsix;
 
-import io.github.qishr.cascara.common.annotation.SchemaDefinition;
-import io.github.qishr.cascara.common.annotation.SchemaProperty;
+import io.github.qishr.cascara.schema.annotation.SchemaDefinition;
+import io.github.qishr.cascara.schema.annotation.SchemaProperty;
 
 @SchemaDefinition
 public class RepositoryInfo {

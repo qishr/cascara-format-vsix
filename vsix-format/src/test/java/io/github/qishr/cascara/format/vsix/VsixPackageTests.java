@@ -43,7 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
 import io.github.qishr.cascara.common.util.ArchiveFile.EntryInfo;
 
 class VsixPackageTests extends ArchiveTestBase {

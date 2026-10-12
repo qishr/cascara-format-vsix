@@ -1,7 +1,6 @@
 package io.github.qishr.cascara.format.vsix;
 
-import io.github.qishr.cascara.common.diagnostic.AbstractLocalizableException;
-import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableRuntimeException;
 import io.github.qishr.cascara.common.diagnostic.message.DiagnosticMessage;
 
 public class VsixException extends LocalizableRuntimeException {

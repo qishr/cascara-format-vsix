@@ -48,11 +48,11 @@ import java.util.Set;
 
 import io.github.qishr.cascara.common.annotation.Nullable;
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
-import io.github.qishr.cascara.common.diagnostic.LocalizableIOException;
-import io.github.qishr.cascara.common.diagnostic.LocalizableRuntimeException;
-import io.github.qishr.cascara.common.diagnostic.NoOpReporter;
-import io.github.qishr.cascara.common.diagnostic.Reporter;
-import io.github.qishr.cascara.common.diagnostic.UnimplementedMethodException;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
+import io.github.qishr.cascara.common.diagnostic.exception.LocalizableRuntimeException;
+import io.github.qishr.cascara.common.diagnostic.report.NoOpReporter;
+import io.github.qishr.cascara.common.diagnostic.report.Reporter;
+import io.github.qishr.cascara.common.diagnostic.exception.UnimplementedMethodException;
 import io.github.qishr.cascara.common.diagnostic.message.GenericMessage;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
 import io.github.qishr.cascara.common.util.ArchiveFile;

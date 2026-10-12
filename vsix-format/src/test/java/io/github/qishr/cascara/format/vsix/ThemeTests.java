@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
-import io.github.qishr.cascara.common.diagnostic.StandardReporter;
+import io.github.qishr.cascara.common.diagnostic.report.LocalReporter;
 import io.github.qishr.cascara.common.util.ArchiveFile;
 
 public class ThemeTests extends ThemeTestBase {
@@ -65,7 +65,7 @@ public class ThemeTests extends ThemeTestBase {
 
         ThemeContribution theme = null;
         try (VsixPackage pkg = VsixPackage.create(pkgPath)) {
-            pkg.setReporter(new StandardReporter().setLevel(Level.DEBUG));
+            pkg.setReporter(new LocalReporter().setLevel(Level.DEBUG));
             pkg.addFile(filePath, DIR_THEMES + fileName);
             // assertFalse(pkg.getEngines().isEmpty());
             assertFalse(pkg.getThemes().isEmpty());
