@@ -87,7 +87,7 @@ class VsixPackageTests extends ArchiveTestBase {
         assertContainsFile("extension/README.md", files, pkgPath);
 
         // Schema schema = new SchemaResolver().getSchemaForClass(VsixMetadata.class);
-        // PlainMapNode decompiled = new SchemaDecompiler().decompile(schema);
+        // GenericAstMap decompiled = new SchemaDecompiler().decompile(schema);
         // String json = new JsonConverter().toString(decompiled);
         // assertNotNull(json);
     }

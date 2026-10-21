@@ -35,7 +35,7 @@ public class PackageJsonTests extends ArchiveTestBase {
         assertNotNull(schema);
         assertNotNull(schema.getRoot());
 
-        // PlainMapNode decompiled = new SchemaDecompiler().decompile(schema);
+        // GenericAstMap decompiled = new SchemaDecompiler().decompile(schema);
         String json = new JsonConverter().toString(schemaDoc);
 
         assertNotNull(json);

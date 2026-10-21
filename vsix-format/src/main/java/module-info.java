@@ -32,7 +32,7 @@
 // you do not wish to do so, delete this exception statement from your
 // version.
 
-
+/// Cascara VSIX file format and utilities
 module cascara.format.vsix {
     requires transitive cascara.common;
     requires transitive cascara.common.io;
