@@ -35,6 +35,7 @@
 
 package io.github.qishr.cascara.format.vsix;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.zip.ZipEntry;
 
 import io.github.qishr.cascara.common.annotation.Nullable;
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
@@ -55,18 +57,18 @@ import io.github.qishr.cascara.common.diagnostic.report.Reporter;
 import io.github.qishr.cascara.common.diagnostic.exception.UnimplementedMethodException;
 import io.github.qishr.cascara.common.diagnostic.message.GenericMessage;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
-import io.github.qishr.cascara.common.util.ArchiveFile;
+import io.github.qishr.cascara.common.util.ZipFile;
 import io.github.qishr.cascara.lang.json.ast.JsonNode;
 import io.github.qishr.cascara.lang.json.ast.JsonObject;
 import io.github.qishr.cascara.lang.json.processor.JsonAstParser;
 import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
-import io.github.qishr.cascara.lang.json.util.JsonOptions;
+import io.github.qishr.cascara.lang.json.util.JsonConfig;
 import io.github.qishr.cascara.lang.xml.ast.XmlNode;
 import io.github.qishr.cascara.lang.xml.processor.XmlAstParser;
-import io.github.qishr.cascara.schema.diagnostic.SchemaDiagnosticMessage;
+import io.github.qishr.cascara.schema.diagnostic.SchemaMessage;
 import io.github.qishr.cascara.schema.diagnostic.SchemaException;
 
-public class VsixPackage extends ArchiveFile {
+public class VsixPackage extends ZipFile {
     private static final String DIR_EXTENSION = "extension/";
     private static final String DIR_IMAGES = DIR_EXTENSION + "images/";
     private static final String DIR_SYNTAXES = DIR_EXTENSION + "syntaxes/";
@@ -113,7 +115,7 @@ public class VsixPackage extends ArchiveFile {
         DIR_THEMES, this::addThemeFileInternal
     );
 
-    private VsixPackage(Path vsixPath, boolean create) throws LocalizableIOException {
+    private VsixPackage(Path vsixPath, boolean create) throws IOException {
         super(vsixPath, create);
     }
 
@@ -132,7 +134,7 @@ public class VsixPackage extends ArchiveFile {
     // Instantiation Methods
     //
 
-    public static VsixPackage open(Path vsixPath) throws LocalizableIOException {
+    public static VsixPackage open(Path vsixPath) throws IOException {
         String packageInfo = new String(extractFile(vsixPath, ENTRY_PACKAGE_JSON));
         String vsixManifest = new String(extractFile(vsixPath, ENTRY_MANIFEST_XML));
         VsixPackage vsix = new VsixPackage(vsixPath, false);
@@ -142,7 +144,7 @@ public class VsixPackage extends ArchiveFile {
         return vsix;
     }
 
-    public static VsixPackage create(Path vsixPath) throws LocalizableIOException {
+    public static VsixPackage create(Path vsixPath) throws IOException {
         VsixPackage vsix = new VsixPackage(vsixPath, true);
         vsix.modified = true;
         return vsix;
@@ -153,7 +155,7 @@ public class VsixPackage extends ArchiveFile {
     //
 
     @Override
-    public byte[] extractFile(String entryName) throws LocalizableIOException {
+    public byte[] extractFile(String entryName) throws IOException {
         // Return the virtual package.json as the actual file isn't written until close/flush time.
         if (entryName.equals(ENTRY_PACKAGE_JSON)) {
             return getPackageJsonContent().getBytes();
@@ -165,12 +167,12 @@ public class VsixPackage extends ArchiveFile {
     }
 
     @Override
-    public void addFile(Path sourcePath, String entryName) throws LocalizableIOException {
+    public VsixPackage addFile(Path sourcePath, String entryName) throws IOException {
         String folderName = folderName(entryName);
         SpecialDirectoryFileHandler wildcardHandler = specialDirectoryFileHandlers.get(folderName);
         if (wildcardHandler != null) {
             wildcardHandler.handle(sourcePath, entryName);
-            return;
+            return this;
         }
         SpecialFileHandler fileHandler = fileHandlers.get(entryName);
         if (fileHandler != null) {
@@ -178,15 +180,16 @@ public class VsixPackage extends ArchiveFile {
         } else {
             super.addFile(sourcePath, entryName);
         }
+        return this;
     }
 
     @Override
-    public void addFile(String content, String entryName) throws LocalizableIOException {
+    public VsixPackage addFile(String content, String entryName) throws IOException {
         String folderName = folderName(entryName);
         SpecialDirectoryContentHandler wildcardHandler = specialDirectoryContentHandlers.get(folderName);
         if (wildcardHandler != null) {
             wildcardHandler.handle(content, entryName);
-            return;
+            return this;
         }
         SpecialContentHandler contentHandler = contentHandlers.get(entryName);
         if (contentHandler != null) {
@@ -194,6 +197,7 @@ public class VsixPackage extends ArchiveFile {
         } else {
             super.addFile(content, entryName);
         }
+        return this;
     }
 
     //
@@ -319,15 +323,15 @@ public class VsixPackage extends ArchiveFile {
     // Optional Files
     //
 
-    public void setChangeLog(Path path) throws LocalizableIOException {
+    public void setChangeLog(Path path) throws IOException {
         addFile(path, ENTRY_CHANGELOG);
     }
 
-    public void setLicense(Path path) throws LocalizableIOException {
+    public void setLicense(Path path) throws IOException {
         addFile(path, ENTRY_LICENSE);
     }
 
-    public void setReadme(Path path) throws LocalizableIOException {
+    public void setReadme(Path path) throws IOException {
         addFile(path, ENTRY_README);
     }
 
@@ -335,7 +339,7 @@ public class VsixPackage extends ArchiveFile {
     // Images
     //
 
-    public void addImagesFromDirectory(Path path) throws LocalizableIOException {
+    public void addImagesFromDirectory(Path path) throws IOException {
         addDirectory(path, DIR_IMAGES);
     }
 
@@ -359,11 +363,11 @@ public class VsixPackage extends ArchiveFile {
     // Languages
     //
 
-    public void setLanguageConfiguration(Path path) throws LocalizableIOException {
+    public void setLanguageConfiguration(Path path) throws IOException {
         addFile(path, ENTRY_LANGUAGE_CONFIGURATION);
     }
 
-    public void addSyntaxFile(Path path) throws LocalizableIOException {
+    public void addSyntaxFile(Path path) throws IOException {
         String fileName = path.getFileName().toString();
         String entryName = DIR_SYNTAXES + fileName;
 
@@ -386,15 +390,15 @@ public class VsixPackage extends ArchiveFile {
         return toImmutableList(themesGroup, ThemeContribution.class);
     }
 
-    public void addThemesFromDirectory(Path sourcePath) throws LocalizableIOException {
-        List<LocalizableIOException> exceptions = new ArrayList<>();
+    public void addThemesFromDirectory(Path sourcePath) throws IOException {
+        List<IOException> exceptions = new ArrayList<>();
         walk(sourcePath, DIR_THEMES, exceptions, (source, entryPath) -> addThemeNoThrow(source, entryPath, exceptions));
         if (!exceptions.isEmpty()) {
             throw exceptions.getFirst();
         }
     }
 
-    public void addThemeFile(Path path) throws LocalizableIOException {
+    public void addThemeFile(Path path) throws IOException {
         addThemeFileInternal(path, DIR_THEMES + path.getFileName());
     }
 
@@ -403,14 +407,14 @@ public class VsixPackage extends ArchiveFile {
     //
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
         if (!closed) {
             flush();
             super.close();
         }
 	}
 
-	public void flush() throws LocalizableIOException {
+	public void flush() throws IOException {
         if (!closed) {
             if (modified) {
                 reporter.debug("Flushing");
@@ -458,7 +462,7 @@ public class VsixPackage extends ArchiveFile {
         addContributionInternal(CATEGORIES_LANGUAGES, CONTRIBUTES_LANGUAGES, contribution);
     }
 
-    private void addSyntaxFileInternal(Path path, String entryName) throws LocalizableIOException {
+    private void addSyntaxFileInternal(Path path, String entryName) throws IOException {
         super.addFile(path, DIR_SYNTAXES + path.getFileName());
         // extract metadata from theme JSON into Package JSON
         String jsonString;
@@ -578,7 +582,7 @@ public class VsixPackage extends ArchiveFile {
         return themesGroup;
     }
 
-    private void addThemeFileInternal(Path path, String entryName) throws LocalizableIOException {
+    private void addThemeFileInternal(Path path, String entryName) throws IOException {
         // reporter.debug("addThemeFileInternal");
         super.addFile(path, DIR_THEMES + path.getFileName());
         // extract metadata from theme JSON into Package JSON
@@ -592,7 +596,7 @@ public class VsixPackage extends ArchiveFile {
         modified = true;
     }
 
-    private void addThemeContentInternal(String content, String entryName) throws LocalizableIOException {
+    private void addThemeContentInternal(String content, String entryName) throws IOException {
         super.addFile(content, entryName);
         extractUiThemeMetadata(content, entryName);
     }
@@ -655,10 +659,10 @@ public class VsixPackage extends ArchiveFile {
         theme.setLabel(name);
     }
 
-    private void addThemeNoThrow(Path sourcePath, Path entryPath, List<LocalizableIOException> exceptions) {
+    private void addThemeNoThrow(Path sourcePath, Path entryPath, List<IOException> exceptions) {
         try {
             addThemeFileInternal(sourcePath, null);
-        } catch (LocalizableIOException e) {
+        } catch (IOException e) {
             exceptions.add(e);
         }
     }
@@ -682,7 +686,7 @@ public class VsixPackage extends ArchiveFile {
 
     private String getPackageJsonContent() {
         JsonSerializer serializer = new JsonSerializer();
-        serializer.setOptions(new JsonOptions().setTrackPosition(true));
+        serializer.setConfig(new JsonConfig().setTrackPosition(true));
         return serializer.toString(pkgJsonFile);
     }
 
@@ -692,7 +696,7 @@ public class VsixPackage extends ArchiveFile {
         // reporter.getWriter(Level.DEBUG).write(2, jsonString);
 
         JsonSerializer serializer = new JsonSerializer();
-        serializer.setOptions(new JsonOptions().setTrackPosition(true));
+        serializer.setConfig(new JsonConfig().setTrackPosition(true));
         pkgJsonFile = serializer.fromString(jsonString, PackageJsonFile.class);
 
         if (!pkgJsonFile.getContributions().isEmpty()) {
@@ -715,7 +719,7 @@ public class VsixPackage extends ArchiveFile {
         try {
         String json = new String(extractFile(entryName));
             extractUiThemeMetadata(json, entryName);
-        } catch (LocalizableIOException e) {
+        } catch (IOException e) {
 
         }
     }
@@ -857,7 +861,7 @@ public class VsixPackage extends ArchiveFile {
     //
 
     private JsonObject parseJson(String jsonString, String entryName) {
-        JsonAstParser jsonAstParser = new JsonAstParser().setOptions(JsonOptions.JSON5);
+        JsonAstParser jsonAstParser = new JsonAstParser().setConfig(JsonConfig.JSON5);
         JsonNode rootNode;
         try {
             rootNode = jsonAstParser.parse(jsonString);
@@ -869,27 +873,27 @@ public class VsixPackage extends ArchiveFile {
         if (rootNode instanceof JsonObject rootObject) {
             return rootObject;
         }
-        throw new SchemaException(SchemaDiagnosticMessage.ROOT_MUST_BE_MAP);
+        throw new SchemaException(SchemaMessage.ROOT_MUST_BE_MAP);
     }
 
     private void enumerateOptionalFiles() throws LocalizableIOException {
         optionalFiles.clear();
-        try {
-			List<EntryInfo> files = listFiles();
-            for (EntryInfo file : files) {
-                if (file.getPath().equals(ENTRY_README)) {
+        // try {
+			List<ZipEntry> files = getEntries();
+            for (ZipEntry file : files) {
+                if (file.getName().equals(ENTRY_README)) {
                     optionalFiles.add(ENTRY_README);
                 }
-                if (file.getPath().equals(ENTRY_CHANGELOG)) {
+                if (file.getName().equals(ENTRY_CHANGELOG)) {
                     optionalFiles.add(ENTRY_CHANGELOG);
                 }
-                if (file.getPath().equals(ENTRY_LICENSE)) {
+                if (file.getName().equals(ENTRY_LICENSE)) {
                     optionalFiles.add(ENTRY_LICENSE);
                 }
             }
-		} catch (LocalizableIOException e) {
-            // If we reach here, the archive hasn't been created yet, which is ok.
-		}
+		// } catch (LocalizableIOException e) {
+        //     // If we reach here, the archive hasn't been created yet, which is ok.
+		// }
     }
 
     private String folderName(String entryName) {
@@ -919,21 +923,21 @@ public class VsixPackage extends ArchiveFile {
 
     @FunctionalInterface
     private interface SpecialFileHandler {
-        void handle(Path sourcePath) throws LocalizableIOException;
+        void handle(Path sourcePath) throws IOException;
     }
 
     @FunctionalInterface
     private interface SpecialContentHandler {
-        void handle(String content) throws LocalizableIOException;
+        void handle(String content) throws IOException;
     }
 
     @FunctionalInterface
     private interface SpecialDirectoryFileHandler {
-        void handle(Path sourcePath, String entryName) throws LocalizableIOException;
+        void handle(Path sourcePath, String entryName) throws IOException;
     }
 
     @FunctionalInterface
     private interface SpecialDirectoryContentHandler {
-        void handle(String content, String entryName) throws LocalizableIOException;
+        void handle(String content, String entryName) throws IOException;
     }
 }

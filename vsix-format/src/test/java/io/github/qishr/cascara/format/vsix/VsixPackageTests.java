@@ -38,13 +38,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.ZipEntry;
 
 import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
-import io.github.qishr.cascara.common.util.ArchiveFile.EntryInfo;
 
 class VsixPackageTests extends ArchiveTestBase {
 
@@ -82,7 +84,7 @@ class VsixPackageTests extends ArchiveTestBase {
         assertTrue(Files.exists(pkgPath));
 
         VsixPackage actual = VsixPackage.open(pkgPath);
-        List<EntryInfo> files = actual.listFiles();
+        List<ZipEntry> files = actual.getEntries();
         assertContainsFile("extension/LICENSE.md", files, pkgPath);
         assertContainsFile("extension/README.md", files, pkgPath);
 
@@ -93,7 +95,7 @@ class VsixPackageTests extends ArchiveTestBase {
     }
 
     @Test
-    void testPackageJsonSimple() throws LocalizableIOException {
+    void testPackageJsonSimple() throws IOException {
         Path pkgPath = tempDir.resolve("package.vsix");
         VsixPackage pkg = VsixPackage.create(pkgPath);
         pkg.setName("Test Theme");

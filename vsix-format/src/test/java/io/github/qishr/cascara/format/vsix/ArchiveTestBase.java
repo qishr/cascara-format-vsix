@@ -16,7 +16,6 @@ import org.junit.jupiter.api.io.TempDir;
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
 import io.github.qishr.cascara.common.diagnostic.report.GlobalReporter;
 import io.github.qishr.cascara.common.diagnostic.report.LocalReporter;
-import io.github.qishr.cascara.common.util.ArchiveFile.EntryInfo;
 
 public abstract class ArchiveTestBase {
     protected LocalReporter reporter = new LocalReporter().setLevel(Level.DEBUG);
@@ -60,9 +59,9 @@ public abstract class ArchiveTestBase {
         // super.tearDown();
     }
 
-    protected void assertContainsFile(String fileName, List<EntryInfo> files, Path pkgPath) throws IOException {
-        for (EntryInfo info : files) {
-            if (info.getPath().equals(fileName)) {
+    protected void assertContainsFile(String fileName, List<ZipEntry> files, Path pkgPath) throws IOException {
+        for (ZipEntry info : files) {
+            if (info.getName().equals(fileName)) {
                 return;
             }
         }

@@ -1,29 +1,27 @@
 package io.github.qishr.cascara.gradle.vsix;
 
-import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
-import io.github.qishr.cascara.format.vsix.VsixPackage;
-import io.github.qishr.cascara.format.vsix.LanguageContribution;
-import io.github.qishr.cascara.format.vsix.RepositoryInfo;
+import java.io.File;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.bundling.Zip;
-
-import java.io.File;
-
-
-import org.gradle.api.tasks.*;
-
-import java.io.IOException;
-
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
 
-import java.nio.file.Path;
+import io.github.qishr.cascara.format.vsix.LanguageContribution;
+import io.github.qishr.cascara.format.vsix.RepositoryInfo;
+import io.github.qishr.cascara.format.vsix.VsixPackage;
 
 public abstract class PackageVsixTask extends DefaultTask {
 

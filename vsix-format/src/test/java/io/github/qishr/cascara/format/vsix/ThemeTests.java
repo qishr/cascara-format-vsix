@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
 import io.github.qishr.cascara.common.diagnostic.report.LocalReporter;
-import io.github.qishr.cascara.common.util.ArchiveFile;
+import io.github.qishr.cascara.common.util.ZipFile;
 
 public class ThemeTests extends ThemeTestBase {
 
@@ -96,7 +96,7 @@ public class ThemeTests extends ThemeTestBase {
         Files.createDirectories(sourceDir.resolve("themes"));
 
         Path pkgPath = tempDir.resolve("package.vsix");
-        try (ArchiveFile archive = ArchiveFile.create(pkgPath)) {
+        try (ZipFile archive = ZipFile.create(pkgPath)) {
             archive.addFile(createSampleContentTypesXml(), ENTRY_CONTENT_TYPES);
             archive.addFile(createSampleManifestXml(), ENTRY_MANIFEST_XML);
             archive.addFile(createSamplePackageJson(), ENTRY_PACKAGE_JSON);

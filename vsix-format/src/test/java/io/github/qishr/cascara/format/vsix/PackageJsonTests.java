@@ -4,14 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
 import io.github.qishr.cascara.common.lang.ast.AstNode;
-import io.github.qishr.cascara.common.service.SPL;
-import io.github.qishr.cascara.common.service.ServiceMetadata;
 import io.github.qishr.cascara.lang.json.processor.JsonConverter;
 import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
 import io.github.qishr.cascara.schema.util.Schema;
@@ -74,7 +73,7 @@ public class PackageJsonTests extends ArchiveTestBase {
     }
 
     @Test
-    void testPackageJsonAdd() throws LocalizableIOException {
+    void testPackageJsonAdd() throws IOException {
         Path pkgPath = tempDir.resolve("package.vsix");
         VsixPackage pkg = VsixPackage.create(pkgPath);
 
@@ -94,7 +93,7 @@ public class PackageJsonTests extends ArchiveTestBase {
     }
 
     @Test
-    void testPackageJsonExtract() throws LocalizableIOException {
+    void testPackageJsonExtract() throws IOException {
         Path pkgPath = tempDir.resolve("package.vsix");
         VsixPackage pkg = VsixPackage.create(pkgPath);
         pkg.setName("Test Theme");

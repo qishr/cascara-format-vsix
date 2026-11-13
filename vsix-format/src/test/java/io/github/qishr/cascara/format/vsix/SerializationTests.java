@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import io.github.qishr.cascara.common.diagnostic.report.LocalReporter;
 import io.github.qishr.cascara.common.util.JreUtils;
 import io.github.qishr.cascara.lang.json.processor.JsonSerializer;
-import io.github.qishr.cascara.lang.json.util.JsonOptions;
+import io.github.qishr.cascara.lang.json.util.JsonConfig;
 
 public class SerializationTests extends ArchiveTestBase {
     @Test
@@ -18,7 +18,7 @@ public class SerializationTests extends ArchiveTestBase {
         String json = JreUtils.getResourceAsString(SerializationTests.class, "/package-1.json");
         JsonSerializer serializer = new JsonSerializer();
         serializer.setReporter(new LocalReporter());
-        serializer.setOptions(new JsonOptions().setTrackPosition(true));
+        serializer.setConfig(new JsonConfig().setTrackPosition(true));
         PackageJsonFile pkgJsonFile = serializer.fromString(json, PackageJsonFile.class);
 
         List<Contribution> themeContibs = pkgJsonFile.getContributions().get(CONTRIBUTES_THEMES);
