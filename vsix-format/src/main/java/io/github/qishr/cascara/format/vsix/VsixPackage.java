@@ -50,11 +50,11 @@ import java.util.zip.ZipEntry;
 
 import io.github.qishr.cascara.common.annotation.Nullable;
 import io.github.qishr.cascara.common.diagnostic.Diagnostic.Level;
-import io.github.qishr.cascara.common.diagnostic.exception.LocalizableIOException;
-import io.github.qishr.cascara.common.diagnostic.exception.LocalizableRuntimeException;
+import io.github.qishr.cascara.common.i18n.exception.LocalizableIOException;
+import io.github.qishr.cascara.common.i18n.exception.LocalizableRuntimeException;
 import io.github.qishr.cascara.common.diagnostic.report.NoOpReporter;
 import io.github.qishr.cascara.common.diagnostic.report.Reporter;
-import io.github.qishr.cascara.common.diagnostic.exception.UnimplementedMethodException;
+import io.github.qishr.cascara.common.exception.UnimplementedMethodException;
 import io.github.qishr.cascara.common.diagnostic.message.GenericMessage;
 import io.github.qishr.cascara.common.lang.diagnostic.ParserException;
 import io.github.qishr.cascara.common.util.ZipFile;
