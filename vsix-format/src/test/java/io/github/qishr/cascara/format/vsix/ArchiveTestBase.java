@@ -50,7 +50,7 @@ public abstract class ArchiveTestBase {
 
     @BeforeEach
     protected void setUp() throws IOException {
-        GlobalReporter.globalInstance().setLevel(Level.INFO);
+        GlobalReporter.get().setLevel(Level.INFO);
         // super.setUp();
     }
 
